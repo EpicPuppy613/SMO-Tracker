@@ -105,6 +105,7 @@ div.container > div {
     aspect-ratio: 1 / 1;
     box-sizing: border-box;
     /* border: 2px solid transparent; */
+    cursor: pointer;
 }
 
 div#capture-tracker img {
@@ -165,6 +166,7 @@ div#capture-overflow-hamburger {
     background-color: var(--locked);
     border-color: transparent;
     z-index: 200;
+    cursor: pointer;
 }
 
 div#capture-overflow-hamburger img {
@@ -253,6 +255,7 @@ div.menu div.menu-button-container p.menu-button {
     padding: 5px 10px;
     border: 1px solid white;
     border-radius: 5px;
+    cursor: pointer;
 }
 
 div#settings-menu div.setting-menu-line {
@@ -292,10 +295,6 @@ label.toggle-switch span.slider::before {
   background-color: white;
   border-radius: 50%;
   transition: 0.3s;
-}
-
-label.toggle-switch input:checked + span.slider {
-  background-color: #4CAF50;
 }
 
 label.toggle-switch input:checked + span.slider:before {

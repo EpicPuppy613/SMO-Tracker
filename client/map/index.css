@@ -1,0 +1,15 @@
+:root {
+    --primary: #e52521;
+    --secondary: #2c2c2c;
+    --accent1:	#F8E643;
+    --accent2:	#0F0F13;
+    --neutral-light: #F2F2F2;
+    --success: #47D17A;
+    --locked: #4e4e4e;
+}
+
+@font-face {
+    font-family: 'Fredoka One';
+    src: url("../resource/fredokaone.TTF");
+}
+

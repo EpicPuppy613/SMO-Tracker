@@ -191,7 +191,7 @@ primaryCaptures.forEach((capture) => {
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     if (!savedCaptures.has(normalizeName(capture))) newDiv.classList.add("locked");
     newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
-    newDiv.addEventListener("click", toggleUnlock)
+    newDiv.addEventListener("click", toggleUnlock);
     divCapture.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
@@ -201,7 +201,7 @@ captures.forEach((capture) => {
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     if (!savedCaptures.has(normalizeName(capture))) newDiv.classList.add("locked");
     newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
-    newDiv.addEventListener("click", toggleUnlock)
+    newDiv.addEventListener("click", toggleUnlock);
     divOverflow.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
