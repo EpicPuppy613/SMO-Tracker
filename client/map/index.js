@@ -32,7 +32,7 @@ const kingdoms = [
     "seaside",
     "luncheon",
     "ruined",
-    "boswer",
+    "bowser",
     "moon",
     "dark",
     "darker",

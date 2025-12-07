@@ -24,6 +24,7 @@ div#kingdom-list {
     position: fixed;
     top: 10px;
     left: 10px;
+    width: 60px;
 }
 
 div#kingdom-list div {
