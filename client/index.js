@@ -151,7 +151,7 @@ divOverflow.style.right = (window.innerWidth - captureRect.right) + "px";
 divOverflow.style.borderBottomRightRadius = (8 + hamburger.clientWidth / 2) + "px"; // 8 = padding
 
 hamburger.onclick = clickOnHamburger;
-
+window.onresize = resizer;
 
 // Event handlers
 function toggleUnlock(event) {
@@ -247,6 +247,14 @@ function clickOffHamburger(event) {
 function closeHamburger() {
     divOverflow.style.opacity = 0;
     setTimeout(() => {divOverflow.style.zIndex = -100;}, 200);
+}
+
+function resizer(event) {
+    const captureRect = divCapture.getBoundingClientRect();
+    divOverflow.style.height = (divCapture.clientHeight + 2*divCapture.style.borderWidth )+ "px";
+    divOverflow.style.bottom = (window.innerHeight - captureRect.bottom) + "px";
+    divOverflow.style.right = (window.innerWidth - captureRect.right) + "px";
+    divOverflow.style.borderBottomRightRadius = (8 + hamburger.clientWidth / 2) + "px"; // 8 = padding
 }
 
 
