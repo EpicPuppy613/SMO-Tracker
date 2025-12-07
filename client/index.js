@@ -110,6 +110,7 @@ const settingsMenu = document.getElementById("settings-menu");
 const resetMenu = document.getElementById("reset-menu");
 const settingsButton = document.getElementById("settings-button");
 const resetButton = document.getElementById("reset-button");
+const showTextToggle = document.getElementById("setting-menu-showText-toggle");
 
 const moonRequirements = [
     "AND",
@@ -145,42 +146,62 @@ const moonRequirements = [
     
 ]
 
+let showText = parseInt(localStorage.getItem("showText"));
+if (isNaN(showText)) {
+    localStorage.setItem("showText", 0);
+    showText = 0;
+}
+
 // Setup
 moons.forEach((kingdom) => {
     let newDiv = document.createElement("div");
     newDiv.id = `moon-tracker-${kingdom}`;
-    newDiv.innerHTML = `<img src="./resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false"><p class="moon-counter"><span id="moon-tracker-${kingdom}-amount">0</span> / <span id="moon-tracker-${kingdom}-total" contenteditable="false">??</span></p>`;
+    newDiv.innerHTML = showText ? `<p>${prettyName(kingdom)}</p><p class="moon-counter"><span id="moon-tracker-${kingdom}-amount">0</span> / <span id="moon-tracker-${kingdom}-total" contenteditable="false">??</span></p>` : `<img src="./resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false"><p class="moon-counter"><span id="moon-tracker-${kingdom}-amount">0</span> / <span id="moon-tracker-${kingdom}-total" contenteditable="false">??</span></p>`;
     newDiv.onwheel = scrollMoonCount;
     newDiv.onclick = setMoonTotal;
     divMoon.appendChild(newDiv);
+    setTimeout(wrapText, 1, newDiv);
 });
 
 abilities.forEach((ability) => {
     let newDiv = document.createElement("div");
     newDiv.id = `ability-tracker-${normalizeName(ability)}`;
     newDiv.classList.add("locked");
-    newDiv.innerHTML = `<img src="./resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${ability}</p>` : `<img src="./resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
     newDiv.onclick = toggleUnlock;
     divAbility.appendChild(newDiv);
+    setTimeout(wrapText, 1, newDiv);
 });
 
 primaryCaptures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     newDiv.classList.add("locked");
-    newDiv.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
     newDiv.addEventListener("click", toggleUnlock)
     divCapture.appendChild(newDiv);
+    setTimeout(wrapText, 1, newDiv);
 });
 
 captures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     newDiv.classList.add("locked");
-    newDiv.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
     newDiv.addEventListener("click", toggleUnlock)
     divOverflow.appendChild(newDiv);
+    setTimeout(wrapText, 1, newDiv);
 });
+
+let newDiv = document.createElement("div");
+newDiv.id = `moon-tracker-moon`;
+newDiv.innerHTML = showText ? '<p>Moon Requirements</p>' : '<img src="./resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements">';
+divMoon.appendChild(newDiv);
+setTimeout(wrapText, 1, newDiv);
+
+if (showText) {
+    showTextToggle.checked = true;
+}
 
 const captureRect = divCapture.getBoundingClientRect();
 divOverflow.style.height = (divCapture.clientHeight + 2*divCapture.style.borderWidth )+ "px";
@@ -192,10 +213,11 @@ hamburger.onclick = clickOnHamburger;
 window.onresize = resizer;
 settingsButton.onclick = openSettings;
 resetButton.onclick = confirmReset;
+showTextToggle.onchange = toggleImageText;
 
 // Event handlers
 function toggleUnlock(event) {
-    let target = event.target.tagName == "IMG" ? event.target.parentElement : event.target;
+    let target = event.target.tagName == "IMG" || event.target.tagName == "P" ? event.target.parentElement : event.target;
     if (target.classList.contains("locked")) {
         target.classList.remove("locked");
     } else {
@@ -271,6 +293,8 @@ function validateTotalMoons(target) {
 
     if (isNaN(num) || num >= 100 || num <= 0) {
         span.textContent = "??";
+        target.style.backgroundPositionY = "0%";
+        target.style.color = "black";
     } else {
         span.textContent = String(num);
 
@@ -362,17 +386,20 @@ function openSettings() {
     settingsMenu.style.opacity = 1;
     settingsMenu.style.zIndex = 300;
 
+    closeHamburger();
+
     document.getElementById("settings-close").onclick = (e) => {
         settingsMenu.style.opacity = 0;
         setTimeout(() => {settingsMenu.style.zIndex = -1}, 200);
         document.getElementById("settings-close").onclick = null;
-        resetProgress();
     }
 }
 
 function confirmReset() {
     resetMenu.style.opacity = 1;
     resetMenu.style.zIndex = 300;
+
+    closeHamburger();
 
     document.getElementById("reset-yes").onclick = (e) => {
         resetMenu.style.opacity = 0;
@@ -393,6 +420,72 @@ function resetProgress() {
     console.log("Clearing progress...")
 }
 
+function toggleImageText() {
+    showText = localStorage.getItem("showText");
+
+    if (showText == 0) {
+        localStorage.setItem("showText", 1);
+
+        moons.forEach((kingdom) => {
+            let div = document.getElementById(`moon-tracker-${kingdom}`);
+            div.innerHTML = div.innerHTML.replace(/<img.*?>/, `<p>${prettyName(kingdom)}</p>`);
+            wrapText(div);
+        });
+
+        abilities.forEach((ability) => {
+            let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+            div.innerHTML = `<p>${ability}</p>`;
+            wrapText(div);
+        });
+
+        primaryCaptures.forEach((capture) => {
+            let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+            div.innerHTML = `<p>${capture}</p>`;
+            wrapText(div);
+        });
+
+        captures.forEach((capture) => {
+            let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+            div.innerHTML = `<p>${capture}</p>`;
+            wrapText(div);
+        });
+
+        let div = document.getElementById(`moon-tracker-moon`);
+        div.innerHTML = div.innerHTML.replace(/<img.*?>/, `<p>Moon Requirements</p>`);
+        wrapText(div);
+
+    } else {
+        localStorage.setItem("showText", 0);
+
+        moons.forEach((kingdom) => {
+            let div = document.getElementById(`moon-tracker-${kingdom}`);
+            div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="./resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false">`);
+            wrapText(div);
+        });
+        
+
+        abilities.forEach((ability) => {
+            let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+            div.innerHTML = `<img src="./resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+        });
+
+        primaryCaptures.forEach((capture) => {
+            let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+            div.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+            
+        });
+
+        captures.forEach((capture) => {
+            let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+            div.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+        });
+
+        let div = document.getElementById(`moon-tracker-moon`);
+        div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="./resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements" draggable="false">`);
+        wrapText(div);
+    }
+}
+
 // String conversions
 function normalizeName(input) {
     return input.replace(/\s+/g, "_")
@@ -400,4 +493,17 @@ function normalizeName(input) {
 
 function prettyName(input) {
     return input.charAt(0).toUpperCase() + input.substring(1);
+}
+
+function wrapText(target) {
+    let child = target.firstElementChild;
+
+    let style = window.getComputedStyle(target);
+    let childStyle = window.getComputedStyle(child);
+
+    let targetWidth = target.clientWidth * 0.95 - 2 * parseFloat(style.padding);
+
+    if (child.scrollWidth <= targetWidth) return;
+
+    child.style.fontSize = (parseFloat(childStyle.fontSize) * (targetWidth / child.scrollWidth)) + "px";
 }
