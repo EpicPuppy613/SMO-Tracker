@@ -3,6 +3,13 @@ if (localStorage.getItem("SHA") !== window.__COMMIT_SHA__) {
 }
 localStorage.setItem("SHA", window.__COMMIT_SHA__);
 
+const params = new URLSearchParams(location.search);
+const roomId = params.get("roomId");
+if (localStorage.getItem("roomId") !== roomId) {
+    clearCache();
+}
+localStorage.setItem("roomId", roomId);
+
 const moons = [
     "cascade",
     "sand",

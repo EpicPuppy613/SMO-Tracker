@@ -14,7 +14,36 @@ if (!roomId) {
 
         if (res.ok) {
             let data = await res.json();
-            if (data.roomId) location.href = `.?roomId=${encodeURIComponent(data.roomId)}`;
+            if (data.roomId) location.href = `/map?roomId=${encodeURIComponent(data.roomId)}`;
         }
     })();
 }
+
+const kingdoms = [
+    "cap",
+    "cascade",
+    "sand",
+    "lake",
+    "wooded",
+    "cloud",
+    "lost",
+    "metro",
+    "snow",
+    "seaside",
+    "luncheon",
+    "ruined",
+    "boswer",
+    "moon",
+    "dark",
+    "darker",
+    "mushroom"
+];
+
+const kingdomList = document.getElementById("kingdom-list");
+
+kingdoms.forEach((kingdom) => {
+    let newDiv = document.createElement("div");
+    newDiv.id = `kingdom-list-${kingdom}`;
+    newDiv.innerHTML = `<img src="/resource/kingdoms/${kingdom}.png" alt="${kingdom}" title="${kingdom}">`;
+    kingdomList.appendChild(newDiv);
+});
