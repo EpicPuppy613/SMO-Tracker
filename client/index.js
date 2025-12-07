@@ -519,6 +519,10 @@ function resetProgress() {
 
     checkMoonReqs();
 
+    clearCache();
+}
+
+function clearCache() {
     localStorage.setItem("moons", "[]");
     localStorage.setItem("moonTotals", "[]");
     localStorage.setItem("captures", "[]");
