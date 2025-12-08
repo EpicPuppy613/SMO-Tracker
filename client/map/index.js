@@ -34,9 +34,64 @@ const kingdoms = [
     "ruined",
     "bowser",
     "moon",
+    "mushroom",
     "dark",
-    "darker",
-    "mushroom"
+    "darker"
+];
+
+const captures = [
+    "Spark Pylon",
+    "Golden Chain Chomp",
+    "Parabones",
+    "Banzai Bill",
+    "Bowser",
+    "Bullet Bill",
+    "Knucklotec's Fist",
+    "Uproot",
+    "Sherm",
+    "Manhole",
+    "Ty-Foo",
+    "Shiverian",
+    "Gushen",
+    "Hammer Bro",
+    "Meat",
+    "Volbonan",
+    "Lava Bubble",
+    "Pokio",
+    "Rocket",
+    "Lakitu",
+    "Yoshi",
+    "Goomba",
+    "Paragoomba",
+    "Binoculars",
+    "Frog",
+    "Chain Chomp",
+    "Big Chain Chomp",
+    "T-Rex",
+    "Glydon",
+    "Moe-Eye",
+    "Zipper",
+    "Tropical Wiggler",
+    "Pole",
+    "Taxi",
+    "RC Car",
+    "Chargin' Chuck",
+    "Coin Coffer",
+    "Poison Piranha Plant",
+    "Fire Bro",
+    "Fire Piranha Plant",
+    "Cheep Cheep",
+    "Snow Cheep Cheep",
+    "Cactus",
+    "Tree",
+    "Boulder",
+    "Letter",
+    "Bowser Statue",
+    "Jizo",
+    "Puzzle Part (Metro Kingdom)",
+    "Puzzle Part (Lake Kingdom)",
+    "Picture Match Part (Goomba)",
+    "Picture Match Part (Mario)",
 ];
 
 const kingdomList = document.getElementById("kingdom-list");
@@ -47,16 +102,20 @@ const tabAbilities = document.getElementById("sidebar-tab-abilities");
 const tabSubAreas = document.getElementById("sidebar-tab-subAreas");
 const tabLoadingZones = document.getElementById("sidebar-tab-loadingZones");
 const tabAvailableChecks = document.getElementById("sidebar-tab-availableChecks");
+const sidebarDragbar = document.getElementById("sidebar-dragbar");
+
+let showText = false;
 
 let currentKingdom = "sand";
 let currentSidebarTab = "captures";
+setSidebarContentCaptures();
 
 tabCaptures.onclick = updateSidebarTab;
 tabAbilities.onclick = updateSidebarTab;
 tabSubAreas.onclick = updateSidebarTab;
 tabLoadingZones.onclick = updateSidebarTab;
 tabAvailableChecks.onclick = updateSidebarTab;
-
+sidebarDragbar.onmousedown = sidebarDrag;
 
 
 kingdoms.forEach((kingdom) => {
@@ -108,21 +167,93 @@ function updateSidebarTab(event) {
 }
 
 function setSidebarContentCaptures() {
+    sidebarContent.innerHTML = "";
 
+    captures.forEach((capture) => {
+        let newDiv = document.createElement("div");
+        newDiv.id = `capture-tracker-${normalizeName(capture)}`;
+        /* if (!savedCaptures.has(normalizeName(capture))) */ newDiv.classList.add("locked");
+        newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+        newDiv.addEventListener("click", toggleUnlock);
+        sidebarContent.appendChild(newDiv);
+        setTimeout(wrapText, 1, newDiv);
+    })
 }
 
 function setSidebarContentAbilities() {
-
+    sidebarContent.innerHTML = "";
 }
 
 function setSidebarContentSubAreas() {
-
+    sidebarContent.innerHTML = "";
 }
 
 function setSidebarContentLoadingZones() {
-
+    sidebarContent.innerHTML = "";
 }
 
 function setSidebarContentAvailableChecks() {
+    sidebarContent.innerHTML = "";
+}
 
+function sidebarDrag(event) {
+    let prevX = event.screenX;
+
+    window.onmousemove = (e) => {
+        let curX = e.screenX;
+
+        let width = parseFloat(window.getComputedStyle(sidebar).width);
+
+        if (isNaN(width)) return;
+
+        sidebar.style.width = Math.max(200, Math.min(width + (prevX - curX), 700)) + "px";
+
+        prevX = curX;
+    }
+    window.onmouseup = (e) => {
+        window.onmousemove = null;
+        window.onmouseup = null;
+    }
+}
+
+
+
+function toggleUnlock(event) {
+    let target = event.target.tagName == "IMG" || event.target.tagName == "P" ? event.target.parentElement : event.target;
+
+    let type = target.id.split("-")[0];
+    let item = target.id.split("-")[2];
+
+    if (target.classList.contains("locked")) {
+        target.classList.remove("locked");
+        type == "capture" ? setCapture(item, 1) : setAbility(item, 1);
+    } else {
+        target.classList.add("locked");
+        type == "capture" ? setCapture(item, 0) : setAbility(item, 0);
+    }
+
+    //if (moonRequirements.flat(10).map((value) => normalizeName(value.substring(1))).includes(item)) checkMoonReqs();
+}
+
+
+// String conversions
+function normalizeName(input) {
+    return input.replace(/\s+/g, "_").replace(/\-/, "_");
+}
+
+function prettyName(input) {
+    return input.charAt(0).toUpperCase() + input.substring(1);
+}
+
+function wrapText(target) {
+    let child = target.firstElementChild;
+
+    let style = window.getComputedStyle(target);
+    let childStyle = window.getComputedStyle(child);
+
+    let targetWidth = target.clientWidth * 0.95 - 2 * parseFloat(style.padding);
+
+    if (child.scrollWidth <= targetWidth) return;
+
+    child.style.fontSize = (parseFloat(childStyle.fontSize) * (targetWidth / child.scrollWidth)) + "px";
 }

@@ -73,6 +73,7 @@ div#sidebar {
     height: 100%;
     width: 20vw;
     background-color: var(--neutral-light);
+    padding-left: 4px;
 }
 
 div#sidebar-tabs {
@@ -116,4 +117,32 @@ div#sidebar div#sidebar-dragbar {
     z-index: 200;
     background-color: var(--locked);
     cursor: w-resize;
+}
+
+div#sidebar-content {
+    height: calc(100% - 20px);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
+    overflow: scroll;
+    padding: 10px;
+}
+
+div#sidebar-content > div {
+    display: block;
+    background-color: var(--locked);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    aspect-ratio: 1 / 1;
+    box-sizing: border-box;
+    /* border: 2px solid transparent; */
+    cursor: pointer;
+}
+
+div#sidebar-content div img {
+    max-width: 100%;
+    max-height: 100%;
 }
