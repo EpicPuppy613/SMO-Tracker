@@ -1,37 +1,3 @@
-:root {
-    --primary: #e52521;
-    --secondary: #2c2c2c;
-    --accent1:	#333333;
-    --accent2:	#0F0F13;
-    --neutral-light: #F2F2F2;
-    --medium-gray: #6f7d8a;
-    --success: #47D17A;
-    --locked: #4e4e4e;
-}
-
-@font-face {
-    font-family: 'Fredoka One';
-    src: url("../resource/fredokaone.TTF");
-}
-
-::-webkit-scrollbar {
-  display: none;
-  width: 0; /* Ensures no space is taken up by the scrollbar */
-  height: 0; /* Ensures no space is taken up by the scrollbar */
-}
-
-body {
-    margin: 0;
-    background-color: var(--accent2);
-    overflow: hidden;
-    font-family: 'Fredoka One';
-}
-
-img {
-    user-select: none;
-    filter: drop-shadow(0px 0px 6px black)
-}
-
 div#kingdom-list {
     background: none;
     position: fixed;
@@ -89,7 +55,7 @@ div#sidebar-tabs {
     position: absolute;
     height: 100%;
     top: 0;
-    left: -36px;
+    left: -37px;
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: repeat(5, 1fr);
@@ -101,7 +67,7 @@ div#sidebar-tabs div {
     text-align: center;
     z-index: 90;
     padding: 10px;
-    margin: 10px 0px;
+    margin: 10px 4px 10px 0px;
     border-bottom-left-radius: 10px;
     border-top-left-radius: 10px;
 }
@@ -115,6 +81,8 @@ div#sidebar-tabs div p {
 
 div#sidebar-tabs div.selected {
     background-color: var(--medium-gray);
+    padding-right: 14px;
+    margin-right: 0px;
     z-index: 300;
 }
 
@@ -160,4 +128,65 @@ div#sidebar-content div img {
 .locked {
     background-color: var(--locked) !important;
     filter: grayscale();
+}
+
+div#settings-menu {
+    position: fixed;
+    display: block;
+    left: 140px;
+    bottom: 10px;
+    width: 60px;
+}
+
+div#settings-menu div#hamburger-button {
+    border-radius: 50%;
+    background-color: var(--locked);
+    border-color: transparent;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    cursor: pointer;
+    aspect-ratio: 1 / 1;
+    max-width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+div#settings-menu div#hamburger-button img {
+    height: 70%;
+    width: 70%;
+    aspect-ratio: 1 / 1;
+    filter: invert();
+}
+
+div#settings-menu div#button-menu {
+    position: absolute;
+    left: 0;
+    bottom: 70px;
+    display: grid;
+    grid-template-rows: repeat(4, 60px);
+    background: none;
+    gap: 5px;
+    cursor: pointer;
+    width: 100%;
+    mask-image: linear-gradient(white, white 95%, black 100%);
+}
+
+div#settings-menu div#button-menu div {
+    background-color: var(--locked);
+    border-radius: 50%;
+    font-size: 5px;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+}
+
+div#settings-menu div#button-menu div a {
+    width: 100%;
+    height: 100%;
+}
+
+div#settings-menu div#button-menu div img {
+    width: 60px;
+    height: 60px;
 }

@@ -1,0 +1,33 @@
+:root {
+    --primary: #e52521;
+    --secondary: #2c2c2c;
+    --accent1:	#333333;
+    --accent2:	#0F0F13;
+    --neutral-light: #F2F2F2;
+    --medium-gray: #6f7d8a;
+    --success: #47D17A;
+    --locked: #4e4e4e;
+}
+
+@font-face {
+    font-family: 'Fredoka One';
+    src: url("../resource/fredokaone.TTF");
+}
+
+::-webkit-scrollbar {
+  display: none;
+  width: 0; /* Ensures no space is taken up by the scrollbar */
+  height: 0; /* Ensures no space is taken up by the scrollbar */
+}
+
+body {
+    margin: 0;
+    background-color: var(--accent2);
+    overflow: hidden;
+    font-family: 'Fredoka One';
+}
+
+img {
+    user-select: none;
+    filter: drop-shadow(0px 0px 6px black)
+}

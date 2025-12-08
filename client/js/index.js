@@ -1,15 +1,3 @@
-if (localStorage.getItem("SHA") !== window.__COMMIT_SHA__) {
-    clearCache();
-}
-localStorage.setItem("SHA", window.__COMMIT_SHA__);
-
-const params = new URLSearchParams(location.search);
-const roomId = params.get("roomId");
-if (localStorage.getItem("roomId") !== roomId) {
-    clearCache();
-}
-localStorage.setItem("roomId", roomId);
-
 const moons = [
     "cascade",
     "sand",
@@ -175,7 +163,7 @@ let savedAbilties = new Set(JSON.parse(localStorage.getItem("abilities") ?? "[]"
 moons.forEach((kingdom) => {
     let newDiv = document.createElement("div");
     newDiv.id = `moon-tracker-${kingdom}`;
-    newDiv.innerHTML = (showText ? `<p>${prettyName(kingdom)}</p>` : `<img src="./resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false">`) + `<p class="moon-counter"><span id="moon-tracker-${kingdom}-amount">${savedMoons.has(kingdom) ? savedMoons.get(kingdom) : 0}</span> / <span id="moon-tracker-${kingdom}-total" contenteditable="false">${savedMoonTotals.has(kingdom) ? savedMoonTotals.get(kingdom) : "??"}</span></p>`;
+    newDiv.innerHTML = (showText ? `<p>${prettyName(kingdom)}</p>` : `<img src="/resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false">`) + `<p class="moon-counter"><span id="moon-tracker-${kingdom}-amount">${savedMoons.has(kingdom) ? savedMoons.get(kingdom) : 0}</span> / <span id="moon-tracker-${kingdom}-total" contenteditable="false">${savedMoonTotals.has(kingdom) ? savedMoonTotals.get(kingdom) : "??"}</span></p>`;
     newDiv.onwheel = scrollMoonCount;
     newDiv.onclick = setMoonTotal;
     divMoon.appendChild(newDiv);
@@ -187,7 +175,7 @@ abilities.forEach((ability) => {
     let newDiv = document.createElement("div");
     newDiv.id = `ability-tracker-${normalizeName(ability)}`;
     if (!savedAbilties.has(normalizeName(ability))) newDiv.classList.add("locked");
-    newDiv.innerHTML = showText ? `<p>${ability}</p>` : `<img src="./resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${ability}</p>` : `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
     newDiv.onclick = toggleUnlock;
     divAbility.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
@@ -197,7 +185,7 @@ primaryCaptures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     if (!savedCaptures.has(normalizeName(capture))) newDiv.classList.add("locked");
-    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
     newDiv.addEventListener("click", toggleUnlock);
     divCapture.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
@@ -207,7 +195,7 @@ captures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     if (!savedCaptures.has(normalizeName(capture))) newDiv.classList.add("locked");
-    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+    newDiv.innerHTML = showText ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
     newDiv.addEventListener("click", toggleUnlock);
     divOverflow.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
@@ -215,7 +203,7 @@ captures.forEach((capture) => {
 
 let newDiv = document.createElement("div");
 newDiv.id = `moon-tracker-moon`;
-newDiv.innerHTML = showText ? '<p>Moon Requirements</p>' : '<img src="./resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements">';
+newDiv.innerHTML = showText ? '<p>Moon Requirements</p>' : '<img src="/resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements">';
 divMoon.appendChild(newDiv);
 setTimeout(wrapText, 1, newDiv);
 checkMoonReqs();
@@ -529,10 +517,7 @@ function resetProgress() {
 }
 
 function clearCache() {
-    localStorage.setItem("moons", "[]");
-    localStorage.setItem("moonTotals", "[]");
-    localStorage.setItem("captures", "[]");
-    localStorage.setItem("abilities", "[]");
+    localStorage.clear();
 }
 
 function openHelp() {
@@ -587,29 +572,29 @@ function toggleImageText() {
 
         moons.forEach((kingdom) => {
             let div = document.getElementById(`moon-tracker-${kingdom}`);
-            div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="./resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false">`);
+            div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="/resource/moons/${kingdom}.png" alt="${prettyName(kingdom)} Moons" title="${prettyName(kingdom)}" draggable="false">`);
             wrapText(div);
         });
         
 
         abilities.forEach((ability) => {
             let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
-            div.innerHTML = `<img src="./resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+            div.innerHTML = `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
         });
 
         primaryCaptures.forEach((capture) => {
             let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-            div.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+            div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
             
         });
 
         captures.forEach((capture) => {
             let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-            div.innerHTML = `<img src="./resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+            div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
         });
 
         let div = document.getElementById(`moon-tracker-moon`);
-        div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="./resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements" draggable="false">`);
+        div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="/resource/moons/mushroom.png" alt="Moon Requirements" title="Moon Requirements" draggable="false">`);
         wrapText(div);
     }
 }

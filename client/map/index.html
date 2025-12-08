@@ -2,10 +2,12 @@
 <!-- Hi :33 -->
 <head>
     <title>SMO Tracker</title>
-    <link href="/map/index.css" type="text/css" rel="stylesheet">
+    <link href="/css/shared.css" type="text/css" rel="stylesheet">
+    <link href="/css/map.css" type="text/css" rel="stylesheet">
     <script>
         window.__COMMIT_SHA__ = "dev";
     </script>
+    <script src="/js/auth.js"></script>
 </head>
 <body>
     <div id="map"></div>
@@ -22,6 +24,25 @@
         <div id="sidebar-content"></div>
     </div>
     <div id="selection-menu"></div>
-    <div id="settings-menu"></div>
-    <script src="/map/index.js"></script>
+    <div id="display-menu"></div>
+    <div id="settings-menu">
+        <div id="hamburger-button">
+            <img src="/resource/hamburger.png" alt="Menu" title="Menu" draggable="false">
+        </div>
+        <div id="button-menu">
+            <div id="help-button">
+                <img src="/resource/help.png" alt="Help" title="Help">
+            </div>
+            <div id="settings-button">
+                <img src="/resource/settings.png" alt="Settings" title="Settings">
+            </div>
+            <div id="github-button">
+                <a href="https://github.com/TheMostEpicest/SMO-Tracker"><img src="/resource/github.png" alt="Github" title="Github"></a>
+            </div>
+            <div id="reset-button">
+                <img src="/resource/reset.png" alt="Reset" title="Reset">
+            </div>
+        </div>
+    </div>
+    <script src="/js/map.js"></script>
 </body>
