@@ -1,5 +1,8 @@
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const sha = process.env.VERCEL_GIT_COMMIT_SHA || "dev";
 
