@@ -1,3 +1,4 @@
 {
-    "public": "client"
+    "public": true,
+    "outputDirectory": "client"
 }
