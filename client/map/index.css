@@ -13,27 +13,107 @@
     src: url("../resource/fredokaone.TTF");
 }
 
+::-webkit-scrollbar {
+  display: none;
+  width: 0; /* Ensures no space is taken up by the scrollbar */
+  height: 0; /* Ensures no space is taken up by the scrollbar */
+}
+
 body {
     margin: 0;
+    background-color: var(--accent2);
+    overflow: hidden;
+    font-family: 'Fredoka One';
+}
+
+img {
+    user-select: none;
 }
 
 div#kingdom-list {
     background: none;
-    display: flex;
-    flex-direction: column;
     position: fixed;
-    top: 10px;
+    top: 0px;
     left: 10px;
-    width: 60px;
+    width: 90px;
+    overflow-y: scroll;
+    height: 100%;
+    
 }
 
 div#kingdom-list div {
+    margin-bottom: 10px;
+    margin-top: 10px;
     border: 4px solid white;
     border-radius: 10px;
     aspect-ratio: 1 / 1 ;
+    overflow: hidden;
+}
+
+div#kingdom-list div.selected {
+    border-color: var(--primary);
 }
 
 div#kingdom-list div img {
-    max-width: 100%;
-    max-height: 100%;
+    height: 100%;
+    margin: 0px auto;
+    
+}
+
+div#kingdom-list div img:hover {
+    transition: transform 2s ease-out;
+    transform: scale(1.1)
+}
+
+div#sidebar {
+    position: fixed;
+    z-index: 100;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 20vw;
+    background-color: var(--neutral-light);
+}
+
+div#sidebar-tabs {
+    position: absolute;
+    height: 100%;
+    top: 0;
+    left: -37px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, 1fr);
+}
+
+div#sidebar-tabs div {
+    background-color: var(--secondary);
+    writing-mode: vertical-rl;
+    text-align: center;
+    z-index: 90;
+    padding: 10px;
+    margin: 10px 0px;
+    border-bottom-left-radius: 10px;
+    border-top-left-radius: 10px;
+}
+
+div#sidebar-tabs div p {
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+div#sidebar-tabs div.selected {
+    background-color: var(--neutral-light);
+}
+
+div#sidebar div#sidebar-dragbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 4px;
+    z-index: 200;
+    background-color: var(--locked);
+    cursor: w-resize;
 }

@@ -4,13 +4,23 @@
     <title>SMO Tracker</title>
     <link href="/map/index.css" type="text/css" rel="stylesheet">
     <script>
-        window.__COMMIT_SHA__ = "__COMMIT_SHA_PLACEHOLDER__";
+        window.__COMMIT_SHA__ = "dev";
     </script>
 </head>
 <body>
     <div id="map"></div>
     <div id="kingdom-list"></div>
-    <div id="subarea-list"></div>
+    <div id="sidebar">
+        <div id="sidebar-tabs">
+            <div id="sidebar-tab-captures" class="selected"><p>Captures</p></div>
+            <div id="sidebar-tab-abilities"><p>Abilities</p></div>
+            <div id="sidebar-tab-subAreas"><p>Sub Areas</p></div>
+            <div id="sidebar-tab-loadingZones"><p>Loading Zones</p></div>
+            <div id="sidebar-tab-availableChecks"><p>Available Checks</p></div>
+        </div>
+        <div id="sidebar-dragbar"></div>
+        <div id="sidebar-content"></div>
+    </div>
     <div id="selection-menu"></div>
     <div id="settings-menu"></div>
     <script src="/map/index.js"></script>
