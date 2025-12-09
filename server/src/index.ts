@@ -10,7 +10,7 @@ const files = [
 
 files.map((file) => {
     let data = readFileSync(file, "utf8");
-    const updated = data.replace("http://localhost:3000", "https://smo-tracker.vercel.app");
+    const updated = data.replaceAll("http://localhost:3000", "https://smo-tracker.vercel.app");
     writeFileSync(file, updated);
 });
 
