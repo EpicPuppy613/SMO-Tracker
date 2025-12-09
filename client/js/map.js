@@ -102,22 +102,37 @@ const tabCaptures = document.getElementById("sidebar-tab-captures");
 const tabAbilities = document.getElementById("sidebar-tab-abilities");
 const tabSubAreas = document.getElementById("sidebar-tab-subAreas");
 const tabLoadingZones = document.getElementById("sidebar-tab-loadingZones");
-const tabAvailableChecks = document.getElementById("sidebar-tab-availableChecks");
+const tabMoons = document.getElementById("sidebar-tab-moons");
 const sidebarDragbar = document.getElementById("sidebar-dragbar");
+const hamburger = document.getElementById("hamburger-button");
+const hamburgerMover = document.getElementById("button-menu-mover");
+const linkButton = document.getElementById("link-button");
+
+const kingdomName = document.getElementById("moon-menu-kingdom");
+const moonsTotal = document.getElementById("moon-menu-total");
+const moonsContainer = document.getElementById("moon-menu-moon-container");
+const toast = document.getElementById("toast");
+const toastReveal = document.getElementById("toast-reveal");
+const toastCopy = document.getElementById("toast-copy");
 
 let showText = false;
 
 let currentKingdom = "sand";
 let currentSidebarTab = "captures";
 setSidebarContentCaptures();
+updateMoonCounter();
 
 tabCaptures.onclick = updateSidebarTab;
 tabAbilities.onclick = updateSidebarTab;
 tabSubAreas.onclick = updateSidebarTab;
 tabLoadingZones.onclick = updateSidebarTab;
-tabAvailableChecks.onclick = updateSidebarTab;
+tabMoons.onclick = updateSidebarTab;
 sidebarDragbar.onmousedown = sidebarDrag;
+hamburger.onclick = toggleHamburger;
+linkButton.onclick = showToast;
 
+toastReveal.onclick = toggleLinkReveal;
+toastCopy.onclick = copyLink;
 
 kingdoms.forEach((kingdom) => {
     let newDiv = document.createElement("div");
@@ -137,6 +152,89 @@ function updateCurrentKingdom(event) {
     document.getElementById(`kingdom-list-${newKingdom}`).classList.add("selected");
 
     currentKingdom = newKingdom;
+
+    updateMoonCounter();
+}
+
+function updateMoonCounter() {
+    kingdomName.textContent = prettyName(currentKingdom);
+
+    let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+    let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+    let amount = moons.get(currentKingdom) ?? 0;
+    let total = moonTotals.get(currentKingdom) ?? 0;
+    let empty = total ? total - amount : 1;
+
+    moonsContainer.innerHTML = "";
+
+    for (i = 0; i < amount; i++) {
+        let el = document.createElement("img");
+        el.src = `/resource/icons/moon-${currentKingdom}.png`;
+        el.alt="Moon";
+        el.title="";
+        el.draggable=false;
+        el.onclick = removeMoon;
+        moonsContainer.appendChild(el);
+    }
+
+    for (i = 0; i < empty; i++) {
+        let el = document.createElement("img");
+        el.src = `/resource/icons/moon-empty.png`;
+        el.alt="Moon";
+        el.title="";
+        el.draggable=false;
+        el.onclick = addMoon;
+        moonsContainer.appendChild(el);
+    }
+}
+
+function addMoon() {
+    let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+    let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+    let moon = moons.get(currentKingdom) ?? 0;
+    let total = moonTotals.get(currentKingdom) ?? 0;
+
+    let el = moonsContainer.children[moon++];
+    el.src = `/resource/icons/moon-${currentKingdom}.png`;
+    el.onclick = removeMoon;
+
+    moons.set(currentKingdom, moon)
+
+    localStorage.setItem("moons", JSON.stringify([...moons]));
+
+    if (!total) {
+        el = document.createElement("img");
+        el.src = `/resource/icons/moon-empty.png`;
+        el.alt="Moon";
+        el.title="";
+        el.draggable=false;
+        el.onclick = addMoon;
+        moonsContainer.appendChild(el);
+    }
+    
+
+}
+
+function removeMoon() {
+    let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+    let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+    let moon = moons.get(currentKingdom) ?? 0;
+    let total = moonTotals.get(currentKingdom) ?? 0;
+
+    if (moon <= 0) return;
+
+    if (!total) moonsContainer.lastElementChild.remove();
+
+    let el = moonsContainer.children[--moon];
+    el.src = `/resource/icons/moon-empty.png`;
+    el.onclick = addMoon;
+
+    moons.set(currentKingdom, moon)
+
+    localStorage.setItem("moons", JSON.stringify([...moons]));
 }
 
 function updateSidebarTab(event) {
@@ -162,8 +260,8 @@ function updateSidebarTab(event) {
         case "loadingZones":
             setSidebarContentLoadingZones();
             return;
-        case "availableChecks":
-            setSidebarContentAvailableChecks();
+        case "moons":
+            setSidebarContentMoons();
             return;
     }
 }
@@ -207,7 +305,7 @@ function setSidebarContentLoadingZones() {
     sidebarContent.innerHTML = "";
 }
 
-function setSidebarContentAvailableChecks() {
+function setSidebarContentMoons() {
     sidebarContent.innerHTML = "";
 }
 
@@ -231,7 +329,15 @@ function sidebarDrag(event) {
     }
 }
 
+function toggleHamburger(event) {
+    let state = parseInt(window.getComputedStyle(hamburgerMover).marginTop) > 0;
 
+    if (state) {
+        hamburgerMover.style.marginTop = "0%";
+    } else {
+        hamburgerMover.style.marginTop = "600%";
+    }
+}
 
 function toggleUnlock(event) {
     let target = event.target.tagName == "IMG" || event.target.tagName == "P" ? event.target.parentElement : event.target;
@@ -272,6 +378,33 @@ function setAbility(ability, state) {
     localStorage.setItem("abilities", JSON.stringify([...abilities]));
 }
 
+function showToast() {
+    toast.style.top = "30px";
+}
+
+function hideToast() {
+    toast.style.top = "-200px";
+}
+
+function toggleLinkReveal() {
+    let link = document.getElementById("toast-link-text");
+    let eye = document.getElementById("toast-reveal");
+
+    if (link.textContent == `https://smo-tracker.vercel.app/?roomId=************************************`) {
+        link.textContent = `https://smo-tracker.vercel.app/?roomId=${localStorage.getItem("roomId")}`;
+        eye.src = "/resource/hide.png";
+        eye.title = "Hide";
+    } else {
+        link.textContent = `https://smo-tracker.vercel.app/?roomId=************************************`;
+        eye.src = "/resource/reveal.png";
+        eye.title = "Reveal";
+    }
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(`http://localhost:3000/?roomId=${localStorage.getItem("roomId")}`);
+    hideToast();
+}
 
 // String conversions
 function normalizeName(input) {

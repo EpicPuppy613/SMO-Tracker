@@ -151,8 +151,7 @@ div#capture-overflow-hamburger {
 }
 
 div#capture-overflow-hamburger img {
-    height: 70%;
-    filter: invert();
+    height: 100%;
 }
 
 div#capture-overflow {

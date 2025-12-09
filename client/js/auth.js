@@ -1,12 +1,3 @@
-if (localStorage.getItem("SHA") !== window.__COMMIT_SHA__) {
-    clearCache();
-}
-localStorage.setItem("SHA", window.__COMMIT_SHA__);
-
-function clearCache() {
-    localStorage.clear();
-}
-
 const params = new URLSearchParams(location.search);
 const roomId = params.get("roomId");
 
@@ -26,3 +17,7 @@ if (localStorage.getItem("roomId") != roomId) {
 }
 
 localStorage.setItem("roomId", roomId);
+
+function clearCache() {
+    localStorage.clear();
+}

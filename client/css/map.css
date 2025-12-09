@@ -136,6 +136,8 @@ div#settings-menu {
     left: 140px;
     bottom: 10px;
     width: 60px;
+    height: calc(70px * 6 - 10px);
+    overflow: hidden;
 }
 
 div#settings-menu div#hamburger-button {
@@ -145,6 +147,7 @@ div#settings-menu div#hamburger-button {
     justify-content: center;
     align-items: center;
     z-index: 200;
+    height: 60px;
     cursor: pointer;
     aspect-ratio: 1 / 1;
     max-width: 100%;
@@ -153,32 +156,50 @@ div#settings-menu div#hamburger-button {
     left: 0;
 }
 
-div#settings-menu div#hamburger-button img {
-    height: 70%;
-    width: 70%;
-    aspect-ratio: 1 / 1;
-    filter: invert();
-}
-
 div#settings-menu div#button-menu {
     position: absolute;
     left: 0;
-    bottom: 70px;
-    display: grid;
-    grid-template-rows: repeat(4, 60px);
+    bottom: 0;
     background: none;
-    gap: 5px;
-    cursor: pointer;
     width: 100%;
-    mask-image: linear-gradient(white, white 95%, black 100%);
+    height: calc(70px * 6 - 10px);
+    mask-image: linear-gradient(
+        to bottom,
+        rgb(255, 255, 255) 0,
+        black calc(85.71% - 5px),
+        black calc(85.71% + 5px),
+        black 100%
+    );
+    -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(85.71% - 5px),
+    transparent calc(85.71% + 5px),
+    transparent 100%
+  );
 }
 
-div#settings-menu div#button-menu div {
+div#settings-menu div#button-menu div#button-menu-mover {
+    left: 0;
+    bottom: 0;
+    display: grid;
+    height: 100%;
+    width: 60px;
+    background: none;
+    grid-template-rows: repeat(6, 60px);
+    background: none;
+    gap: 10px;
+    margin-top: 600%;
+    transition: margin-top 0.5s;
+}
+
+div#settings-menu div#button-menu div#button-menu-mover div {
     background-color: var(--locked);
     border-radius: 50%;
     font-size: 5px;
     aspect-ratio: 1 / 1;
-    height: 100%;
+    width: 100%;
+    cursor: pointer;
 }
 
 div#settings-menu div#button-menu div a {
@@ -186,7 +207,100 @@ div#settings-menu div#button-menu div a {
     height: 100%;
 }
 
-div#settings-menu div#button-menu div img {
+div#settings-menu img {
     width: 60px;
     height: 60px;
+}
+
+div#moon-menu {
+    position: fixed;
+    top: 10px;
+    left: 150px;
+    width: 350px;
+    transform: rotate(-3deg);
+    vertical-align: baseline;
+}
+
+div#moon-menu-bar {
+    background-color: var(--neutral-light);
+    width: 100%;
+    height: 5px;
+    margin-top: 5px;
+    margin-bottom: 8px;
+}
+
+div#moon-menu div#moon-menu-label {
+    height: 100%;
+    width: 100%;
+    margin: 0px;
+    color: var(--neutral-light);
+    align-items: center;
+    display: flex;
+}
+
+div#moon-menu h1 {
+    margin: 5px;
+}
+
+div#moon-menu p {
+    padding-left: 5px;
+    margin: 0;
+    font-size: 24px;
+}
+
+div#moon-menu-moon-container {
+    margin: 5px;
+    width: calc(100% - 10px);
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+}
+
+div#moon-menu-moon-container img {
+    width: 100%;
+    height: 100%;
+    filter: none;
+}
+
+div#toast {
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #5c815c;
+    border: 2px solid var(--neutral-light);
+    color: var(--neutral-light);
+    border-radius: 20px;
+    box-shadow: inset black 0px 0px 6px;
+    transition: top 0.3s ease;
+}
+
+
+div#toast h1 {
+    margin: 10px;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    width: 100%;
+    padding-left: 10px;
+    font-weight: normal;
+}
+
+div#toast p {
+    border: 1px solid var(--neutral-light);
+    border-radius: 10px;
+    padding: 6px;
+    font-size: 16px;
+    margin: 10px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+}
+
+div#toast p img {
+    width: 24px;
+    height: 24px;
+    padding: 6px;
+    border: 1px solid var(--neutral-light);
+    border-radius: 10px;
+    margin-left: 10px
 }

@@ -4,9 +4,6 @@
     <title>SMO Tracker</title>
     <link href="/css/shared.css" type="text/css" rel="stylesheet">
     <link href="/css/map.css" type="text/css" rel="stylesheet">
-    <script>
-        window.__COMMIT_SHA__ = "dev";
-    </script>
     <script src="/js/auth.js"></script>
 </head>
 <body>
@@ -18,10 +15,19 @@
             <div id="sidebar-tab-abilities"><p>Abilities</p></div>
             <div id="sidebar-tab-subAreas"><p>Sub Areas</p></div>
             <div id="sidebar-tab-loadingZones"><p>Loading Zones</p></div>
-            <div id="sidebar-tab-availableChecks"><p>Available Checks</p></div>
+            <div id="sidebar-tab-moons"><p>Moons</p></div>
         </div>
         <div id="sidebar-dragbar"></div>
         <div id="sidebar-content"></div>
+    </div>
+    <div id="moon-menu">
+        <div id="moon-menu-label">
+            <h1 id="moon-menu-kingdom"></h1>
+            <p id="moon-menu-total">(??)</p>
+        </div>
+        <div id="moon-menu-bar"></div>
+        <div id="moon-menu-moon-container">
+        </div>
     </div>
     <div id="selection-menu"></div>
     <div id="display-menu"></div>
@@ -30,19 +36,28 @@
             <img src="/resource/hamburger.png" alt="Menu" title="Menu" draggable="false">
         </div>
         <div id="button-menu">
-            <div id="help-button">
-                <img src="/resource/help.png" alt="Help" title="Help">
-            </div>
-            <div id="settings-button">
-                <img src="/resource/settings.png" alt="Settings" title="Settings">
-            </div>
-            <div id="github-button">
-                <a href="https://github.com/TheMostEpicest/SMO-Tracker"><img src="/resource/github.png" alt="Github" title="Github"></a>
-            </div>
-            <div id="reset-button">
-                <img src="/resource/reset.png" alt="Reset" title="Reset">
+            <div id="button-menu-mover">
+                <div id="link-button">
+                    <img src="/resource/link.png" alt="Link" title="Copy Overlay Link">
+                </div>
+                <div id="reset-button">
+                    <img src="/resource/reset.png" alt="Reset" title="Reset">
+                </div>
+                <div id="help-button">
+                    <img src="/resource/help.png" alt="Help" title="Help">
+                </div>
+                <div id="settings-button">
+                    <img src="/resource/settings.png" alt="Settings" title="Settings">
+                </div>
+                <div id="github-button">
+                    <a href="https://github.com/TheMostEpicest/SMO-Tracker"><img src="/resource/github.png" alt="Github" title="Github"></a>
+                </div>
             </div>
         </div>
+    </div>
+    <div id="toast">
+        <h1 id="toast-title">Copy this link into an OBS browser source</h1>
+        <p id="toast-link"><span id="toast-link-text">https://smo-tracker.vercel.app/?roomId=************************************</span><img id="toast-reveal" src="/resource/reveal.png" alt="Eye" title="Reveal"><img id="toast-copy" src="/resource/link.png" alt="Link" title="Copy"></p>
     </div>
     <script src="/js/map.js"></script>
 </body>
