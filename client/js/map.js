@@ -138,16 +138,12 @@ const selectionMenu = document.getElementById("selection-menu");
 const selectionMenuToggle = document.getElementById("selection-menu-header-collapse");
 document.getElementById("selection-menu-header").onclick = toggleSelectionMenu;
 
+// INITIAL STATE
 let showText = false;
 let currentKingdom = "Sand";
 let currentSidebarTab = "captures";
-setSidebarContentCaptures();
-updateCurrentKingdom();
-if (!localStorage.getItem("linkToastPopup") && roomId) {
-    createLinkToast();
-    localStorage.setItem("linkToastPopup", 1)
-}
 
+// SETUP
 kingdoms.forEach((kingdom) => {
     let newDiv = document.createElement("div");
     newDiv.id = `kingdom-list-${normalizeName(kingdom)}`;
@@ -156,6 +152,13 @@ kingdoms.forEach((kingdom) => {
     kingdomList.appendChild(newDiv);
 });
 
+setSidebarContentCaptures();
+updateCurrentKingdom();
+if (!localStorage.getItem("linkToastPopup") && roomId) {
+    createLinkToast();
+    localStorage.setItem("linkToastPopup", 1)
+}
+
 // KINGDOM FUNCTIONS
 function updateCurrentKingdom(event) {
     if (event) {
@@ -163,9 +166,10 @@ function updateCurrentKingdom(event) {
         let target = event.target.tagName == "IMG" ? event.target.parentElement : event.target;
         let newKingdom = target.id.split("-")[2];
         document.getElementById(`kingdom-list-${normalizeName(currentKingdom)}`).classList.remove("selected");
-        document.getElementById(`kingdom-list-${normalizeName(newKingdom)}`).classList.add("selected");
         currentKingdom = newKingdom;
     }
+
+    document.getElementById(`kingdom-list-${normalizeName(currentKingdom)}`).classList.add("selected");
 
     let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
     let total = !noRequirementKingdoms.has(currentKingdom) ? moonTotals.get(currentKingdom) ?? 0 : 0;

@@ -24,7 +24,7 @@ div#kingdom-list div {
 }
 
 div#kingdom-list div.selected {
-    border-color: var(--primary);
+    border-color: var(--medium-gray);
 }
 
 div#kingdom-list div img {
@@ -303,6 +303,7 @@ div.toast p {
     height: 36px;
     display: flex;
     align-items: center;
+    user-select: text;
 }
 
 div.toast p img {
