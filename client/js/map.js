@@ -151,13 +151,98 @@ kingdoms.forEach((kingdom) => {
     newDiv.onclick = updateCurrentKingdom;
     kingdomList.appendChild(newDiv);
 });
-
 setSidebarContentCaptures();
 updateCurrentKingdom();
-if (!localStorage.getItem("linkToastPopup") && roomId) {
-    createLinkToast();
-    localStorage.setItem("linkToastPopup", 1)
-}
+
+// ABLY FUNCTIONS
+const ablyReady = initAbly().then(() => {
+    ably.subscribe("update:moonTotals", (msg) => {
+        const data = msg.data;
+
+        console.log(data)
+
+        let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+        if (data.value == 0) {
+            moonTotals.clear(data.kingdom);
+        } else {
+            moonTotals.set(data.kingdom, data.value);
+        }
+
+        localStorage.setItem("moonTotals", JSON.stringify([...moonTotals]));
+
+        if (data.kingdom == currentKingdom) {
+            document.getElementById('moon-menu-total-editor').textContent = data.value ? data.value : "??";
+            updateMoonCounter();
+        }
+    });
+    ably.subscribe("update:moons", (msg) => {
+        const data = msg.data;
+
+        console.log(data)
+
+        let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+
+        if (data.value > 0) {
+            moons.set(data.kingdom, data.value);
+        } else {
+            moons.clear(data.kingdom);
+        }
+
+        localStorage.setItem("moons", JSON.stringify([...moons]));
+
+        if (data.kingdom == currentKingdom) updateMoonCounter();
+    })
+    ably.subscribe("update:captures", (msg) => {
+        const data = msg.data;
+
+        let target = document.getElementById(`capture-tracker-${data.capture}`);
+
+        let captures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"));
+
+        if (target.classList.contains("locked")) {
+            target.classList.remove("locked");
+            captures.add(data.capture);
+        } else {
+            target.classList.add("locked");
+            captures.delete(data.capture);
+        }
+
+        localStorage.setItem("captures", JSON.stringify([...captures]));
+    });
+    ably.subscribe("update:ability", (msg) => {
+        const data = msg.data;
+
+        let target = document.getElementById(`ability-tracker-${data.ability}`);
+
+        let abilities = new Set(JSON.parse(localStorage.getItem("abilities") ?? "[]"));
+
+        if (target.classList.contains("locked")) {
+            target.classList.remove("locked");
+            abilities.add(data.ability);
+        } else {
+            target.classList.add("locked");
+            abilities.delete(data.ability);
+        }
+
+        localStorage.setItem("abilities", JSON.stringify([...abilities]));
+    });
+    ably.subscribe("get:all", (msg) => {
+        const data = msg.data;
+        ably.publish("post:all", {
+            clientId: data.clientId,
+            moons: localStorage.getItem("moons"),
+            moonTotals: localStorage.getItem("moonTotals"),
+            captures: localStorage.getItem("captures"),
+            abilities: localStorage.getItem("abilities"),
+        });
+    });
+    ably.subscribe("post:reset", (msg) => {
+        resetProgress(1);
+    });
+});
+
+
 
 // KINGDOM FUNCTIONS
 function updateCurrentKingdom(event) {
@@ -211,7 +296,6 @@ function updateMoonCounter() {
         createMoonIcon("plus", addMoon);
     }
 }
-
 function createMoonIcon(name, onclick) {
     let el = document.createElement("img");
         el.src = `/resource/icons/moon-${name}.png`;
@@ -221,7 +305,6 @@ function createMoonIcon(name, onclick) {
         el.onclick = onclick;
         moonsContainer.appendChild(el);
 }
-
 function addMoon() {
     let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
     let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
@@ -243,9 +326,8 @@ function addMoon() {
         updateMoonIcon("emptyplus", moon, addMoon)
     }
     
-
+    if (!noRequirementKingdoms.has(currentKingdom)) ably.publish("update:moons", { kingdom: currentKingdom, value: moon });
 }
-
 function removeMoon() {
     let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
     let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
@@ -269,15 +351,15 @@ function removeMoon() {
     moons.set(currentKingdom, --moon);
 
     localStorage.setItem("moons", JSON.stringify([...moons]));
-}
 
+    if (!noRequirementKingdoms.has(currentKingdom)) ably.publish("update:moons", { kingdom: currentKingdom, value: moon });
+}
 function updateMoonIcon(name, index, onclick) {
     if (index < 0) index = moonsContainer.children.length + index;
     let el = moonsContainer.children[index];
     el.src = `/resource/icons/moon-${name}.png`;
     el.onclick = onclick;
 }
-
 function setMoonTotal(event) {
     const moonEditor = document.getElementById("moon-menu-total-editor");
 
@@ -291,19 +373,26 @@ function setMoonTotal(event) {
     sel.removeAllRanges();
     sel.addRange(range);
 
-    moonEditor.addEventListener("blur", () => {
-        moonEditor.contentEditable = "false";
-        validateTotalMoons(moonEditor);
-    });
-    moonEditor.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter') {
-            e.preventDefault();
-            moonEditor.contentEditable = "false";
-            validateTotalMoons(moonEditor);
-        }
-    });
+    moonEditor.addEventListener("blur", blurMoonTotal);
+    moonEditor.addEventListener('keydown', enterMoonTotal);
 }
-
+function enterMoonTotal(e) {
+    if (e.key == 'Enter') {
+        const moonEditor = document.getElementById("moon-menu-total-editor");
+        e.preventDefault();
+        moonEditor.contentEditable = "false";
+        moonEditor.removeEventListener("keydown", enterMoonTotal);
+        moonEditor.removeEventListener("blur", blurMoonTotal);
+        validateTotalMoons(moonEditor);
+    }
+}
+function blurMoonTotal(e) {
+    const moonEditor = document.getElementById("moon-menu-total-editor");
+    moonEditor.contentEditable = "false";
+    moonEditor.removeEventListener("keydown", enterMoonTotal);
+    moonEditor.removeEventListener("blur", blurMoonTotal);
+    validateTotalMoons(moonEditor);
+}
 function validateTotalMoons(moonEditor) {
     let newValue = moonEditor.textContent.trim();
 
@@ -320,6 +409,8 @@ function validateTotalMoons(moonEditor) {
         moonTotals.set(currentKingdom, num);
     }
     localStorage.setItem("moonTotals", JSON.stringify([...moonTotals]));
+
+    if (!noRequirementKingdoms.has(currentKingdom)) ably.publish("update:moonTotals", { kingdom: currentKingdom, value: num });
 
     updateMoonCounter();
 }
@@ -356,7 +447,6 @@ function updateSidebarTab(event) {
             return;
     }
 }
-
 function setSidebarContentCaptures() {
     sidebarContent.innerHTML = "";
     sidebarContent.style.gridTemplateColumns = "repeat(auto-fit, minmax(90px, 1fr))";
@@ -373,7 +463,6 @@ function setSidebarContentCaptures() {
         setTimeout(wrapText, 1, newDiv);
     })
 }
-
 function setSidebarContentAbilities() {
     sidebarContent.innerHTML = "";
     sidebarContent.style.gridTemplateColumns = "repeat(auto-fit, minmax(90px, 1fr))";
@@ -390,24 +479,19 @@ function setSidebarContentAbilities() {
         setTimeout(wrapText, 1, newDiv);
     });
 }
-
 function setSidebarContentSubAreas() {
     sidebarContent.innerHTML = "";
     sidebarContent.style.gridTemplateColumns = "1fr";
 }
-
 function setSidebarContentLoadingZones() {
     sidebarContent.innerHTML = "";
 }
-
 function setSidebarContentMoons() {
     sidebarContent.innerHTML = "";
 }
-
 function setSidebarContentDisplay() {
     sidebarContent.innerHTML = "";
 }
-
 function sidebarDrag(event) {
     let prevX = event.screenX;
 
@@ -429,6 +513,7 @@ function sidebarDrag(event) {
     }
 }
 
+// CAPTURE/ABILITY FUNCTIONS
 function toggleUnlock(event) {
     let target = event.target.tagName == "IMG" || event.target.tagName == "P" ? event.target.parentElement : event.target;
 
@@ -443,7 +528,6 @@ function toggleUnlock(event) {
         type == "capture" ? setCapture(item, 0) : setAbility(item, 0);
     }
 }
-
 function setCapture(capture, state) {
     let captures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"))
 
@@ -454,8 +538,8 @@ function setCapture(capture, state) {
     }
 
     localStorage.setItem("captures", JSON.stringify([...captures]));
+    ably.publish("update:captures", { capture: capture, value: state });
 }
-
 function setAbility(ability, state) {
     let abilities = new Set(JSON.parse(localStorage.getItem("abilities") ?? "[]"));
 
@@ -466,6 +550,7 @@ function setAbility(ability, state) {
     }
 
     localStorage.setItem("abilities", JSON.stringify([...abilities]));
+    ably.publish("update:abilities", { ability: ability, value: state });
 }
 
 // TOAST FUNCTIONS
@@ -473,7 +558,6 @@ function showToast(toastId) {
     let toast = document.getElementById(toastId);
     toast.style.top = "30px";
 }
-
 function hideToast(toastId) {
     let toast = document.getElementById(toastId);
     toast.style.top = "-200px";
@@ -481,7 +565,6 @@ function hideToast(toastId) {
         toast.remove();
     }, 300);
 }
-
 function toggleLinkReveal() {
     let link = document.getElementById("toast-link-text");
     let eye = document.getElementById("toast-reveal");
@@ -496,12 +579,10 @@ function toggleLinkReveal() {
         eye.title = "Reveal";
     }
 }
-
 function copyLink() {
     navigator.clipboard.writeText(`http://localhost:3000/?roomId=${localStorage.getItem("roomId")}`);
     hideToast("toast-link-div");
 }
-
 function toggleSelectionMenu() {
     let displacement = selectionMenu.getBoundingClientRect().height;
 
@@ -514,7 +595,7 @@ function toggleSelectionMenu() {
     }
 }
 
-// HAMBURGER FUNCTIONS
+// HAMBURGER MENU FUNCTIONS
 function toggleHamburger(event) {
     let state = parseInt(window.getComputedStyle(hamburgerMover).marginTop) > 0;
 
@@ -525,18 +606,15 @@ function toggleHamburger(event) {
         hamburgerMover.style.marginTop = window.getComputedStyle(hamburgerMover).height;
     }
 }
-
 function closeHamburger() {
     hamburgerMover.style.marginTop = window.getComputedStyle(hamburgerMover).height;
 }
-
 function clickOffHamburger(event) {
     if (!hamburgerMover.contains(event.target)) {
         closeHamburger();
         document.removeEventListener("click", clickOffHamburger);
     }
 }
-
 function createLinkToast() {
     closeHamburger();
 
@@ -562,7 +640,6 @@ function createLinkToast() {
     setTimeout(showToast, 1, "toast-link-div");
 
 }
-
 function openSettings() {
     settingsMenu.style.opacity = 1;
     settingsMenu.style.zIndex = 300;
@@ -575,7 +652,6 @@ function openSettings() {
         document.getElementById("settings-close").onclick = null;
     }
 }
-
 function confirmReset() {
     resetMenu.style.opacity = 1;
     resetMenu.style.zIndex = 300;
@@ -596,40 +672,27 @@ function confirmReset() {
         document.getElementById("reset-yes").onclick = null;
     }
 }
+function resetProgress(forward) {
+    captures.forEach((capture) => {
+        let el = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+        if (el) el.classList.add("locked");
+    });
+    abilities.forEach((ability) => {
+        let el = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+        if (el) el.classList.add("locked");
+    });
 
-function resetProgress() {
-    // let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
-    // let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
-    // let captures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"));
-    // let abilities = new Set(JSON.parse(localStorage.getItem("abilities") ?? "[]"));
+    clearCache();
 
-    // moons.forEach((amount, kingdom) => {
-    //     document.getElementById(`moon-tracker-${normalizeName(kingdom)}-amount`).textContent = 0;
-    //     updateMoonProgress(document.getElementById(`moon-tracker-${normalizeName(kingdom)}`));
-    // });
+    updateMoonCounter();
 
-    // moonTotals.forEach((total, kingdom) => {
-    //     document.getElementById(`moon-tracker-${normalizeName(kingdom)}-total`).textContent = "??";
-    //     updateMoonProgress(document.getElementById(`moon-tracker-${normalizeName(kingdom)}`));
-    // });
+    if (!noRequirementKingdoms.has(currentKingdom)) document.getElementById('moon-menu-total-editor').textContent = "??";
 
-    // captures.forEach((capture) => {
-    //     document.getElementById(`capture-tracker-${capture}`).classList.add("locked");
-    // });
-
-    // abilities.forEach((ability) => {
-    //     document.getElementById(`ability-tracker-${ability}`).classList.add("locked");
-    // });
-
-    // checkMoonReqs();
-
-    // clearCache();
+    if (forward) ably.publish("post:reset", {});
 }
-
 function clearCache() {
     localStorage.clear();
 }
-
 function openHelp() {
     helpMenu.style.opacity = 1;
     helpMenu.style.zIndex = 300;
@@ -642,7 +705,6 @@ function openHelp() {
         document.getElementById("help-close").onclick = null;
     }
 }
-
 function toggleImageText() {
     // showText = localStorage.getItem("showText");
 
@@ -708,8 +770,6 @@ function toggleImageText() {
     //     wrapText(div);
     // }
 }
-
-
 
 // String conversions
 function normalizeName(input) {

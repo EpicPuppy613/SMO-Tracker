@@ -153,7 +153,7 @@ if (isNaN(showText)) {
     localStorage.setItem("showText", 0);
     showText = 0;
 }
-
+let moonEditor;
 let savedMoons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
 let savedMoonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
 let savedCaptures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"));
@@ -170,7 +170,6 @@ moons.forEach((kingdom) => {
     setTimeout(wrapText, 1, newDiv);
     updateMoonProgress(newDiv);
 });
-
 abilities.forEach((ability) => {
     let newDiv = document.createElement("div");
     newDiv.id = `ability-tracker-${normalizeName(ability)}`;
@@ -180,7 +179,6 @@ abilities.forEach((ability) => {
     divAbility.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
-
 primaryCaptures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
@@ -190,7 +188,6 @@ primaryCaptures.forEach((capture) => {
     divCapture.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
-
 captures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
@@ -200,14 +197,12 @@ captures.forEach((capture) => {
     divOverflow.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
-
 let newDiv = document.createElement("div");
 newDiv.id = `moon-tracker-moon`;
 newDiv.innerHTML = showText ? '<p>Moon Requirements</p>' : '<img src="/resource/moons/Mushroom.png" alt="Moon Requirements" title="Moon Requirements">';
 divMoon.appendChild(newDiv);
 setTimeout(wrapText, 1, newDiv);
 checkMoonReqs();
-
 if (showText) {
     showTextToggle.checked = true;
 }
@@ -224,6 +219,139 @@ settingsButton.onclick = openSettings;
 resetButton.onclick = confirmReset;
 helpButton.onclick = openHelp;
 showTextToggle.onchange = toggleImageText;
+
+function setAll() {
+    let savedMoons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+    let savedMoonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+    let savedCaptures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"));
+    let savedAbilties = new Set(JSON.parse(localStorage.getItem("abilities") ?? "[]"));
+
+    moons.forEach((kingdom) => {
+        let el = document.getElementById(`moon-tracker-${normalizeName(kingdom)}`);
+        let amount = document.getElementById(`moon-tracker-${normalizeName(kingdom)}-amount`);
+        let total = document.getElementById(`moon-tracker-${normalizeName(kingdom)}-total`);
+
+        if (savedMoons.has(normalizeName(kingdom))) {
+            amount.textContent = savedMoons.get(normalizeName(kingdom));
+        } else {
+            amount.textContent = 0;
+        }
+
+        if (savedMoonTotals.has(normalizeName(kingdom))) {
+            total.textContent = savedMoonTotals.get(normalizeName(kingdom));
+        } else {
+            total.textContent = "??";
+        }
+
+        fullMoons(el);
+    });
+    primaryCaptures.forEach((capture) => {
+        let el = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+        if (savedCaptures.has(normalizeName(capture))) {
+            el.classList.remove("locked");
+        } else {
+            el.classList.add("locked");
+        }
+    });
+    captures.forEach((capture) => {
+        let el = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+        if (savedCaptures.has(normalizeName(capture))) {
+            el.classList.remove("locked");
+        } else {
+            el.classList.add("locked");
+        }
+    });
+    abilities.forEach((ability) => {
+        let el = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+        if (savedAbilties.has(normalizeName(ability))) {
+            el.classList.remove("locked");
+        } else {
+            el.classList.add("locked");
+        }
+    });
+}
+
+// ABLY FUNCTIONS
+const ablyReady = initAbly().then(() => {
+    ably.subscribe("update:moonTotals", (msg) => {
+        const data = msg.data;
+        let target = document.getElementById(`moon-tracker-${data.kingdom}`);
+        let span = document.getElementById(`moon-tracker-${data.kingdom}-total`);
+
+        let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+        if (data.value == 0) {
+            span.textContent = "??";
+            target.style.backgroundPositionY = "0%";
+            target.style.color = "black";
+            moonTotals.clear(data.kingdom);
+        } else {
+            span.textContent = data.value;
+            updateMoonProgress(target);
+            fullMoons(target);
+            moonTotals.set(data.kingdom, data.value);
+        }
+
+        localStorage.setItem("moonTotals", JSON.stringify([...moonTotals]));
+    });
+    ably.subscribe("update:moons", (msg) => {
+        const data = msg.data;
+        let target = document.getElementById(`moon-tracker-${data.kingdom}`);
+        let span = document.getElementById(`moon-tracker-${data.kingdom}-amount`);
+
+        span.textContent = data.value;
+
+        updateMoonProgress(target);
+
+        let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
+
+        if (data.value > 0) {
+            moons.set(data.kingdom, data.value);
+        } else {
+            moons.clear(data.kingdom);
+        }
+
+        localStorage.setItem("moons", JSON.stringify([...moons]));
+    });
+    ably.subscribe("update:captures", (msg) => {
+        const data = msg.data;
+
+        let target = document.getElementById(`capture-tracker-${data.capture}`);
+
+        if (data.value) {
+            target.classList.remove("locked");
+        } else {
+            target.classList.add("locked");
+        }
+    });
+    ably.subscribe("update:abilities", (msg) => {
+        const data = msg.data;
+
+        let target = document.getElementById(`ability-tracker-${data.ability}`);
+
+        if (data.value) {
+            target.classList.remove("locked");
+        } else {
+            target.classList.add("locked");
+        }
+    });
+    ably.subscribe("post:all", (msg) => {
+        const data = msg.data;
+
+        if (data.clientId !== clientId) return;
+
+        localStorage.setItem("moons", data.moons);
+        localStorage.setItem("moonTotals", data.moonTotals);
+        localStorage.setItem("captures", data.captures);
+        localStorage.setItem("abilities", data.abilities);
+
+        setAll();
+    });
+    ably.subscribe("post:reset", (msg) => {
+        resetProgress(1);
+    });
+    ably.publish("get:all", { clientId: clientId });
+});
 
 // Event handlers
 function toggleUnlock(event) {
@@ -253,6 +381,7 @@ function setCapture(capture, state) {
     }
     
     localStorage.setItem("captures", JSON.stringify([...captures]));
+    ably.publish("update:captures", { capture: capture, value: state });
 }
 
 function setAbility(ability, state) {
@@ -265,6 +394,7 @@ function setAbility(ability, state) {
     }
 
     localStorage.setItem("abilities", JSON.stringify([...abilities]));
+    ably.publish("update:abilities", { ability: ability, value: state });
 }
 
 function scrollMoonCount(event) {
@@ -300,6 +430,8 @@ function scrollMoonCount(event) {
     }
 
     localStorage.setItem("moons", JSON.stringify([...moons]));
+
+    ably.publish("update:moons", { kingdom: item, value: amount });
 }
 
 function updateMoonProgress(target) {
@@ -319,27 +451,34 @@ function setMoonTotal(event) {
 
     event.preventDefault();
 
-    let span = document.getElementById(target.id + "-total");
+    moonEditor = document.getElementById(target.id + "-total");
 
-    span.contentEditable = true;
-    span.focus();
+    moonEditor.contentEditable = true;
+    moonEditor.focus();
     const range = document.createRange();
     const sel = window.getSelection();
-    range.selectNodeContents(span);
+    range.selectNodeContents(moonEditor);
     sel.removeAllRanges();
     sel.addRange(range);
 
-    span.addEventListener("blur", () => {
-        span.contentEditable = "false";
-        validateTotalMoons(target);
-    });
-    span.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter') {
-            e.preventDefault();
-            span.contentEditable = "false";
-            validateTotalMoons(target);
-        }
-    });
+    moonEditor.addEventListener("blur", blurMoonTotal);
+    moonEditor.addEventListener('keydown', enterMoonTotal);
+}
+
+function enterMoonTotal(e) {
+    if (e.key == 'Enter') {
+        e.preventDefault();
+        moonEditor.contentEditable = "false";
+        moonEditor.removeEventListener("keydown", enterMoonTotal);
+        moonEditor.removeEventListener("blur", blurMoonTotal);
+        validateTotalMoons(moonEditor.parentElement);
+    }
+}
+function blurMoonTotal(e) {
+    moonEditor.contentEditable = "false";
+    moonEditor.removeEventListener("keydown", enterMoonTotal);
+    moonEditor.removeEventListener("blur", blurMoonTotal);
+    validateTotalMoons(moonEditor.parentElement.parentElement);
 }
 
 function validateTotalMoons(target) {
@@ -347,31 +486,28 @@ function validateTotalMoons(target) {
 
     let newValue = span.textContent.trim();
 
-    let num = Number(newValue)
+    let num = Number(newValue);
+
+    let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
+
+    let item = target.id.split("-")[2];
 
     if (isNaN(num) || num >= 100 || num <= 0) {
         span.textContent = "??";
         target.style.backgroundPositionY = "0%";
         target.style.color = "black";
+        moonTotals.clear(item);
 
     } else {
         span.textContent = String(num);
 
         updateMoonProgress(target);
         fullMoons(target);
-
-        let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
-
-        let item = target.id.split("-")[2];
-
-        if (num > 0) {
-            moonTotals.set(item, num);
-        } else {
-            moonTotals.clear(item);
-        }
-
-        localStorage.setItem("moonTotals", JSON.stringify([...moonTotals]));
+        moonTotals.set(item, num);
     }
+
+    localStorage.setItem("moonTotals", JSON.stringify([...moonTotals]));
+    ably.publish("update:moonTotals", { kingdom: item, value: num });
 }
 
 function fullMoons(target) {
@@ -487,7 +623,7 @@ function confirmReset() {
     }
 }
 
-function resetProgress() {
+function resetProgress(forward) {
     let moons = new Map(JSON.parse(localStorage.getItem("moons") ?? "[]"));
     let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals") ?? "[]"));
     let captures = new Set(JSON.parse(localStorage.getItem("captures") ?? "[]"));
@@ -514,10 +650,8 @@ function resetProgress() {
     checkMoonReqs();
 
     clearCache();
-}
 
-function clearCache() {
-    localStorage.clear();
+    if (forward) ably.publish("post:reset", {});
 }
 
 function openHelp() {
