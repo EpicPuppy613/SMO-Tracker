@@ -1,4 +1,4 @@
-function clearCache() {
+export function clearCache() {
     [
         "moons",
         "moonTotals",
@@ -9,53 +9,48 @@ function clearCache() {
     });
 }
 
-window.clearCache = clearCache;
 
-(async function () {
-    async function getOrCreateRoom() {
-        const params = new URLSearchParams(location.search);
-        let roomId = params.get("roomId");
+async function getOrCreateRoom() {
+    const params = new URLSearchParams(location.search);
+    let roomId = params.get("roomId");
 
-        if (!roomId) {
-            let res = await fetch("/api/create", { method: "POST" });
+    if (!roomId) {
+        let res = await fetch("/api/create", { method: "POST" });
 
-            if (res.ok) {
-                let data = await res.json();
-                if (data.roomId) {
-                    roomId = data.roomId;
-                    const url = new URL(location.href);
-                    url.searchParams.set("roomId", roomId);
-                    history.replaceState(null, "", url);
-                }
+        if (res.ok) {
+            let data = await res.json();
+            if (data.roomId) {
+                roomId = data.roomId;
+                const url = new URL(location.href);
+                url.searchParams.set("roomId", roomId);
+                history.replaceState(null, "", url);
             }
         }
-        if (localStorage.getItem("roomId") != roomId) {
-            clearCache();
-        }
-
-        localStorage.setItem("roomId", roomId);
-        return roomId;
+    }
+    if (localStorage.getItem("roomId") != roomId) {
+        clearCache();
     }
 
-    async function initAbly() {
-        const roomId = await getOrCreateRoom();
+    localStorage.setItem("roomId", roomId);
+    return roomId;
+}
 
-        const client = new Ably.Realtime({
-            authUrl: `/api/auth?roomId=${encodeURIComponent(roomId)}`,
-            echoMessages: false
-        });
+export async function initAbly() {
+    const roomId = await getOrCreateRoom();
 
-        await new Promise((resolve) => {
-            client.connection.once("connected", resolve);
-        });
+    const client = new Ably.Realtime({
+        authUrl: `/api/auth?roomId=${encodeURIComponent(roomId)}`,
+        echoMessages: false
+    });
 
-        window.clientId = client.auth.clientId;
+    await new Promise((resolve) => {
+        client.connection.once("connected", resolve);
+    });
 
-        const channelName = `room:${roomId}`;
-        const channel = client.channels.get(channelName);
-        
-        window.ably = channel;
-    }
+    const clientId = client.auth.clientId;
 
-    window.initAbly = initAbly;
-})();
+    const channelName = `room:${roomId}`;
+    const ably = client.channels.get(channelName);
+    
+    return { ably, clientId };
+}

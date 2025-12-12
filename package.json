@@ -5,7 +5,7 @@
   "main": "server/out/index.js",
   "scripts": {
     "build:production": "tsc -p server/tsconfig.json && node .",
-    "build:development": "echo \"Not running npm build\""
+    "build:development": "tsc -p server/tsconfig.json && echo \"Not running npm build\""
   },
   "author": "TheMostEpicest",
   "license": "ISC",
@@ -13,7 +13,8 @@
     "@vercel/node": "^5.5.15",
     "ably": "^2.15.0",
     "dotenv": "^17.2.3",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

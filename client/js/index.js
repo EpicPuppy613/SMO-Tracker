@@ -1,105 +1,9 @@
-const moons = [
-    "Cascade",
-    "Sand",
-    "Lake",
-    "Wooded",
-    "Lost",
-    "Metro",
-    "Snow",
-    "Seaside",
-    "Luncheon",
-    "Ruined",
-    "Bowser",
-];
+import { kingdoms, captures, abilities, noRequirementKingdoms } from "/data/index.js";
+import { clearCache, initAbly } from "./auth.js";
 
-const abilities = [
-    "Jump",
-    "Double Jump",
-    "Triple Jump",
-    "Wall Jump",
-    "Long Jump",
-    "Backflip",
-    "Sideflip",
-    "Crouch",
-    "Roll",
-    "Roll Boost",
-    "Dive",
-    "Climb",
-    "Ground Pound",
-    "Cap Throw",
-    "Down Throw",
-    "Up Throw",
-    "Spin Throw",
-    "Cap Bounce",
-    "Ledge Grab"
-];
-
-const primaryCaptures = [
-    // Required to beat the game
-    "Spark Pylon",
-    "Golden Chain Chomp",
-    "Parabones",
-    "Banzai Bill",
-    "Bowser",
-
-    // Required for world peace
-    "Bullet Bill",
-    "Knucklotec's Fist",
-    "Uproot",
-    "Sherm",
-    "Manhole",
-    "Ty-Foo",
-    "Shiverian",
-    "Gushen",
-    "Hammer Bro",
-    "Meat",
-    "Volbonan",
-    "Lava Bubble",
-    "Pokio",
-
-    // Unlocks a lot of moons
-    "Rocket",
-    "Lakitu",
-    "Yoshi",
-    "Goomba",
-    "Paragoomba",
-    "Binoculars",
-];
-
-const captures = [ // How many moons each capture unlocks from memory (probably wildly wrong)
-    "Frog",
-    "Chain Chomp",
-    "Big Chain Chomp", //2
-    "T-Rex", //3
-    "Glydon", // not many
-    "Moe-Eye", //0
-
-    "Zipper", //5
-    "Tropical Wiggler", //2
-    "Pole", //0
-    "Taxi", //2
-    "RC Car", //3
-    "Chargin' Chuck", //0
-    
-    "Coin Coffer", //1
-    "Poison Piranha Plant", //0
-    "Fire Bro",
-    "Fire Piranha Plant", //0
-    "Cheep Cheep",
-    "Snow Cheep Cheep",
-
-    "Cactus", //1
-    "Tree", //1
-    "Boulder", //1
-    "Letter", //1
-    "Bowser Statue", //1
-    "Jizo", //4
-
-    "Puzzle Part (Metro Kingdom)",
-    "Puzzle Part (Lake Kingdom)", //1
-    "Picture Match Part (Goomba)", //2
-    "Picture Match Part (Mario)", //2
-];
+const moons = kingdoms.filter((kingdom) => !noRequirementKingdoms.has(kingdom));
+const primaryCaptures = captures.slice(0, 24);
+const secondaryCaptures = captures.slice(24);
 
 const divMoon = document.getElementById("moon-tracker");
 const divAbility = document.getElementById("ability-tracker");
@@ -188,7 +92,7 @@ primaryCaptures.forEach((capture) => {
     divCapture.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
 });
-captures.forEach((capture) => {
+secondaryCaptures.forEach((capture) => {
     let newDiv = document.createElement("div");
     newDiv.id = `capture-tracker-${normalizeName(capture)}`;
     if (!savedCaptures.has(normalizeName(capture))) newDiv.classList.add("locked");
@@ -253,7 +157,7 @@ function setAll() {
             el.classList.add("locked");
         }
     });
-    captures.forEach((capture) => {
+    secondaryCaptures.forEach((capture) => {
         let el = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
         if (savedCaptures.has(normalizeName(capture))) {
             el.classList.remove("locked");
@@ -272,7 +176,7 @@ function setAll() {
 }
 
 // ABLY FUNCTIONS
-const ablyReady = initAbly().then(() => {
+initAbly().then(({ ably, clientId }) => {
     ably.subscribe("update:moonTotals", (msg) => {
         const data = msg.data;
         let target = document.getElementById(`moon-tracker-${data.kingdom}`);
@@ -363,6 +267,9 @@ const ablyReady = initAbly().then(() => {
         resetProgress(1);
     });
     ably.publish("get:all", { clientId: clientId });
+
+    window.ably = ably;
+    window.clientId = clientId;
 });
 
 // Event handlers
@@ -703,7 +610,7 @@ function toggleImageText() {
             wrapText(div);
         });
 
-        captures.forEach((capture) => {
+        secondaryCaptures.forEach((capture) => {
             let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
             div.innerHTML = `<p>${capture}</p>`;
             wrapText(div);
@@ -734,7 +641,7 @@ function toggleImageText() {
             
         });
 
-        captures.forEach((capture) => {
+        secondaryCaptures.forEach((capture) => {
             let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
             div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
         });

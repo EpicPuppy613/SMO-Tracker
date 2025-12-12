@@ -1,110 +1,9 @@
-const kingdoms = [
-    "Cap",
-    "Cascade",
-    "Sand",
-    "Lake",
-    "Wooded",
-    "Cloud",
-    "Lost",
-    "Metro",
-    "Snow",
-    "Seaside",
-    "Luncheon",
-    "Ruined",
-    "Bowser",
-    "Moon",
-    "Mushroom",
-    "Dark",
-    "Darker"
-];
-
-const captures = [
-    "Spark Pylon",
-    "Golden Chain Chomp",
-    "Parabones",
-    "Banzai Bill",
-    "Bowser",
-    "Bullet Bill",
-    "Knucklotec's Fist",
-    "Uproot",
-    "Sherm",
-    "Manhole",
-    "Ty-Foo",
-    "Shiverian",
-    "Gushen",
-    "Hammer Bro",
-    "Meat",
-    "Volbonan",
-    "Lava Bubble",
-    "Pokio",
-    "Rocket",
-    "Lakitu",
-    "Yoshi",
-    "Goomba",
-    "Paragoomba",
-    "Binoculars",
-    "Frog",
-    "Chain Chomp",
-    "Big Chain Chomp",
-    "T-Rex",
-    "Glydon",
-    "Moe-Eye",
-    "Zipper",
-    "Tropical Wiggler",
-    "Pole",
-    "Taxi",
-    "RC Car",
-    "Chargin' Chuck",
-    "Coin Coffer",
-    "Poison Piranha Plant",
-    "Fire Bro",
-    "Fire Piranha Plant",
-    "Cheep Cheep",
-    "Snow Cheep Cheep",
-    "Cactus",
-    "Tree",
-    "Boulder",
-    "Letter",
-    "Bowser Statue",
-    "Jizo",
-    "Puzzle Part (Metro Kingdom)",
-    "Puzzle Part (Lake Kingdom)",
-    "Picture Match Part (Goomba)",
-    "Picture Match Part (Mario)",
-];
-
-const abilities = [
-    "Jump",
-    "Double Jump",
-    "Triple Jump",
-    "Wall Jump",
-    "Long Jump",
-    "Backflip",
-    "Sideflip",
-    "Crouch",
-    "Roll",
-    "Roll Boost",
-    "Dive",
-    "Climb",
-    "Ground Pound",
-    "Cap Throw",
-    "Down Throw",
-    "Up Throw",
-    "Spin Throw",
-    "Cap Bounce",
-    "Ledge Grab"
-];
-
-const noRequirementKingdoms = new Set([
-    "Cap",
-    "Cloud",
-    "Moon",
-    "Mushroom",
-    "Dark",
-    "Darker"
-]);
+import { kingdoms, captures, abilities, noRequirementKingdoms } from "../data/index.js";
+import { clearCache, initAbly } from "./auth.js";
 
 const kingdomList = document.getElementById("kingdom-list");
+
+const mapDiv = document.getElementById("map");
 
 const sidebar = document.getElementById("sidebar");
 const sidebarContent = document.getElementById("sidebar-content");
@@ -142,6 +41,28 @@ document.getElementById("selection-menu-header").onclick = toggleSelectionMenu;
 let showText = false;
 let currentKingdom = "Sand";
 let currentSidebarTab = "captures";
+let i;
+
+// MAP FUNCTIONS
+mapDiv.style.width = `calc(100vw - ${parseFloat(window.getComputedStyle(sidebar).width)}px)`;
+const mapBounds = [fractionToLatLng(0, 0), fractionToLatLng(1, 1)];
+const map = L.map("map", {
+    attributionControl: false,
+    zoomControl: false,
+    zoomSnap: 0.1,
+    maxZoom: 3,
+    minZoom: Math.round(10 * (window.innerHeight < window.innerWidth ? window.innerHeight / 512 - 0.1 : window.innerWidth / 512 - 0.1)) / 10,
+    // maxBoundsViscosity: 0.2,
+    maxBounds: mapBounds,
+}).setView([0, 0], 0);
+const mapLayer = L.imageOverlay(`/resource/maps/${currentKingdom}.png`, mapBounds).addTo(map);
+
+function fractionToLatLng(x, y) {
+    return [
+        90 - (180 * x),
+        (360 * x) - 180
+    ]
+}
 
 // SETUP
 kingdoms.forEach((kingdom) => {
@@ -155,11 +76,9 @@ setSidebarContentCaptures();
 updateCurrentKingdom();
 
 // ABLY FUNCTIONS
-const ablyReady = initAbly().then(() => {
+initAbly().then(({ ably, clientId }) => {
     ably.subscribe("update:moonTotals", (msg) => {
         const data = msg.data;
-
-        console.log(data)
 
         let moonTotals = new Map(JSON.parse(localStorage.getItem("moonTotals")) ?? []);
 
@@ -178,8 +97,6 @@ const ablyReady = initAbly().then(() => {
     });
     ably.subscribe("update:moons", (msg) => {
         const data = msg.data;
-
-        console.log(data)
 
         let moons = new Map(JSON.parse(localStorage.getItem("moons")) ?? []);
 
@@ -240,14 +157,17 @@ const ablyReady = initAbly().then(() => {
     ably.subscribe("post:reset", (msg) => {
         resetProgress(1);
     });
+    
+    window.ably = ably;
+    window.clientId = clientId;
 });
+
 
 
 
 // KINGDOM FUNCTIONS
 function updateCurrentKingdom(event) {
     if (event) {
-
         let target = event.target.tagName == "IMG" ? event.target.parentElement : event.target;
         let newKingdom = target.id.split("-")[2];
         document.getElementById(`kingdom-list-${normalizeName(currentKingdom)}`).classList.remove("selected");
@@ -265,6 +185,10 @@ function updateCurrentKingdom(event) {
     } else {
         moonsTotal.innerHTML = "";
     }
+
+    map.setView([0, 0], 0);
+    mapLayer.setUrl(`/resource/maps/${currentKingdom}.png`);
+    
 
     updateMoonCounter();
 }
@@ -502,8 +426,11 @@ function sidebarDrag(event) {
 
         if (isNaN(width)) return;
 
-        sidebar.style.width = Math.max(200, Math.min(width + (prevX - curX), 800)) + "px";
-        selectionMenu.style.right = (Math.max(200, Math.min(width + (prevX - curX), 800)) + 70)+ "px";
+        let clampWidth = Math.max(200, Math.min(width + (prevX - curX), 800));
+
+        sidebar.style.width = clampWidth + "px";
+        selectionMenu.style.right = (clampWidth + 70)+ "px";
+        mapDiv.style.width = `calc(100vw - ${clampWidth}px)`;
 
         prevX = curX;
     }
@@ -583,6 +510,8 @@ function copyLink() {
     navigator.clipboard.writeText(`http://localhost:3000/?roomId=${localStorage.getItem("roomId")}`);
     hideToast("toast-link-div");
 }
+
+// SELECTION MENU FUNCTIONS
 function toggleSelectionMenu() {
     let displacement = selectionMenu.getBoundingClientRect().height;
 
@@ -689,9 +618,6 @@ function resetProgress(forward) {
     if (!noRequirementKingdoms.has(currentKingdom)) document.getElementById('moon-menu-total-editor').textContent = "??";
 
     if (forward) ably.publish("post:reset", {});
-}
-function clearCache() {
-    localStorage.clear();
 }
 function openHelp() {
     helpMenu.style.opacity = 1;

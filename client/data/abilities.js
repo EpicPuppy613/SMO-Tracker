@@ -1,0 +1,21 @@
+export const abilities = [
+    "Jump",
+    "Double Jump",
+    "Triple Jump",
+    "Wall Jump",
+    "Long Jump",
+    "Backflip",
+    "Sideflip",
+    "Crouch",
+    "Roll",
+    "Roll Boost",
+    "Dive",
+    "Climb",
+    "Ground Pound",
+    "Cap Throw",
+    "Down Throw",
+    "Up Throw",
+    "Spin Throw",
+    "Cap Bounce",
+    "Ledge Grab"
+];

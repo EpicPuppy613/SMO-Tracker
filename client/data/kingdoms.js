@@ -1,0 +1,19 @@
+export const kingdoms = [
+    "Cap",
+    "Cascade",
+    "Sand",
+    "Lake",
+    "Wooded",
+    "Cloud",
+    "Lost",
+    "Metro",
+    "Snow",
+    "Seaside",
+    "Luncheon",
+    "Ruined",
+    "Bowser",
+    "Moon",
+    "Mushroom",
+    "Dark",
+    "Darker"
+];
