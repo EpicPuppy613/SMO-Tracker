@@ -835,6 +835,9 @@ function evaluateLogic(logic) {
             } else if (value.charAt(0) == "w") { // World Peace
                 let peace = worldPeace.get(value.substring(1));
                 return peace ? evaluateLogic(peace) : false;
+            } else if (value.charAt(0) == "r") { // Moon Rock
+                let peace = new Set(JSON.parse(localStorage.getItem("moonRock")) ?? []).has(normalizeName(value.substring(1)));
+                return peace ? evaluateLogic(peace) : false;
             } else if (value.charAt(0) == "o") { // Outfit
                 return new Set(JSON.parse(localStorage.getItem("outfits")) ?? []).has(normalizeName(value.substring(1)));
             } else {
