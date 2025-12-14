@@ -111,26 +111,59 @@ div#sidebar div#sidebar-dragbar {
 
 div#sidebar-content {
     height: calc(100% - 20px);
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 1fr);
-    gap: 10px;
     overflow: scroll;
     padding: 10px;
 }
 
-div#sidebar-content > div {
+div#sidebar-content div.sidebar-content-category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
+}
+
+div.sidebar-content-category-grid div {
     display: block;
     background-color: var(--neutral-light);
     padding: 12px;
     display: flex;
     align-items: center;
+    text-align: center;
     justify-content: center;
     border-radius: 8px;
     aspect-ratio: 1 / 1;
     box-sizing: border-box;
+    
     /* border: 2px solid transparent; */
     cursor: pointer;
 }
+
+div.sidebar-content-category-column h1 {
+    margin: 10px;
+    font-size: 24px;
+    font-weight: normal;
+
+}
+
+div.sidebar-content-category-column div {
+    padding: 10px;
+    background-color: var(--neutral-light);
+    margin-bottom: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+div.sidebar-content-category-column div img {
+    height: 25px;
+    padding-right: 10px;
+}
+
+div#sidebar-content div p {
+    margin: 0;
+}
+
 
 div#sidebar-content div img {
     max-width: 100%;
@@ -305,6 +338,10 @@ div.toast h1 {
     font-weight: normal;
 }
 
+div.toast p.toast-noborder {
+    border: none;
+}
+
 div.toast p {
     border: 1px solid var(--neutral-light);
     border-radius: 10px;
@@ -374,6 +411,9 @@ div#selection-menu-header h1 {
     flex-grow: 2;
     color: var(--neutral-light);
     font-weight: normal;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    text-wrap-mode: nowrap;
 }
 
 div#selection-menu-content {
@@ -385,6 +425,16 @@ div#selection-menu-content {
     flex-direction: column;
     align-items: center;
     overflow-y: scroll;
+}
+
+p#selection-menu-content-description {
+    font-size: 16px;
+}
+
+span.selection-menu-moon-number {
+    font-size: 14px;
+    color: var(--medium-gray);
+    padding-right: 5px;
 }
 
 div#selection-menu-content img#selection-menu-content-picture {

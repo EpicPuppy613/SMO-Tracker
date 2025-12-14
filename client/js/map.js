@@ -1,46 +1,88 @@
-import { kingdoms, captures, abilities, nomoonKingdoms, moons, moonKingdoms, multimoonKingdoms } from "../data/index.js";
+import { kingdoms, captures, abilities, nomoonKingdoms, moons, moonKingdoms, multimoonKingdoms, zones, groups, worldPeace, subAreas } from "../data/index.js";
 import { clearCache, initAbly } from "./auth.js";
 
-const kingdomList = document.getElementById("kingdom-list");
+// SETUP
+const nodes = initNodes();
+initListeners();
+initMenus();
+window.markMap = new Map();
+initAbly().then(ablyPubSubSetup);
+initKingdomList();
+leafletInit();
+setSidebarContentCaptures();
+updateCurrentKingdom(localStorage.getItem("kingdom") ?? "Cap");
 
-const sidebar = document.getElementById("sidebar");
-const sidebarContent = document.getElementById("sidebar-content");
-document.getElementById("sidebar-dragbar").onmousedown = sidebarDrag;
-document.getElementById("sidebar-tab-captures").onclick = setSidebarContentCaptures;
-document.getElementById("sidebar-tab-abilities").onclick = setSidebarContentAbilities;
-document.getElementById("sidebar-tab-subAreas").onclick = setSidebarContentSubAreas;
-document.getElementById("sidebar-tab-loadingZones").onclick = setSidebarContentLoadingZones;
-document.getElementById("sidebar-tab-moons").onclick = setSidebarContentMoons;
-document.getElementById("sidebar-tab-display").onclick = setSidebarContentDisplay;
+// ---- DOM ELEMENTS ----
+// DOM Setup
+function initNodes() {
+    return {
+        root: document.documentElement,
+        kingdomList: document.getElementById("kingdom-list"),
+        sidebar: document.getElementById("sidebar"),
+        sidebarContent: document.getElementById("sidebar-content"),
+        sidebarDragbar: document.getElementById("sidebar-dragbar"),
+        sidebarTabCaptures: document.getElementById("sidebar-tab-captures"),
+        sidebarTabAbilities: document.getElementById("sidebar-tab-abilities"),
+        sidebarTabSubAreas: document.getElementById("sidebar-tab-subAreas"),
+        sidebarTabLoadingZones: document.getElementById("sidebar-tab-loadingZones"),
+        sidebarTabMoons: document.getElementById("sidebar-tab-moons"),
+        sidebarTabDisplay: document.getElementById("sidebar-tab-display"),
+        hamburgerButton: document.getElementById("hamburger-button"),
+        hamburgerMover: document.getElementById("button-menu-mover"),
+        linkButton: document.getElementById("link-button"),
+        settingsButton: document.getElementById("settings-button"),
+        resetButton: document.getElementById("reset-button"),
+        helpButton: document.getElementById("help-button"),
+        settingsMenu: document.getElementById("settings-menu"),
+        settingsMenuTextToggle: document.getElementById("setting-menu-showText-toggle"),
+        settingsMenuThemeToggle: document.getElementById("setting-menu-lightDark-toggle"),
+        resetMenu: document.getElementById("reset-menu"),
+        helpMenu: document.getElementById("help-menu"),
+        moonsContainer: document.getElementById("moon-menu-moon-container"),
+        moonsTotal: document.getElementById("moon-menu-total"),
+        toaster: document.getElementById("toaster"),
+        selectionMenu: document.getElementById("selection-menu"),
+        selectionMenuHeader: document.getElementById("selection-menu-header"),
+        selectionMenuIcon: document.getElementById("selection-menu-header-icon"),
+        selectionMenuTitle: document.getElementById("selection-menu-header-title"),
+        selectionMenuPicture: document.getElementById("selection-menu-content-picture"),
+        selectionMenuDescription: document.getElementById("selection-menu-content-description"),
+        selectionMenuButtons: document.getElementById("selection-menu-content-buttons")
+    }
+}
+function initListeners() {
+    nodes.sidebarDragbar.onmousedown = sidebarDrag;
+    nodes.sidebarTabCaptures.onclick = setSidebarContentCaptures;
+    nodes.sidebarTabAbilities.onclick = setSidebarContentAbilities;
+    nodes.sidebarTabSubAreas.onclick = setSidebarContentSubAreas;
+    nodes.sidebarTabLoadingZones.onclick = setSidebarContentLoadingZones;
+    nodes.sidebarTabMoons.onclick = setSidebarContentMoons;
+    nodes.sidebarTabDisplay.onclick = setSidebarContentDisplay;
+    nodes.hamburgerButton.onclick = openHamburger;
+    nodes.linkButton.onclick = createLinkToast;
+    nodes.settingsButton.onclick = openSettings;
+    nodes.resetButton.onclick = confirmReset;
+    nodes.helpButton.onclick = openHelp;
+    nodes.settingsMenuTextToggle.onchange = toggleImageText;
+    nodes.settingsMenuThemeToggle.onchange = toggleLightDarkMode;
+    nodes.selectionMenuHeader.onclick = openSelectionMenu;
+}
 
-const hamburgerMover = document.getElementById("button-menu-mover");
-const hamburgerButton = document.getElementById("hamburger-button");
-hamburgerButton.onclick = openHamburger;
+// ---- ABLY ----
+// Ably Setup
+function ablyPubSubSetup({ ably, clientId }) {
+    window.ably = ably;
+    window.clientId = clientId;
 
-const settingsMenu = document.getElementById("settings-menu");
-const resetMenu = document.getElementById("reset-menu");
-const helpMenu = document.getElementById("help-menu");
-document.getElementById("link-button").onclick = createLinkToast;
-document.getElementById("settings-button").onclick = openSettings;
-document.getElementById("reset-button").onclick = confirmReset;
-document.getElementById("help-button").onclick = openHelp;
-document.getElementById("setting-menu-showText-toggle").onchange = toggleImageText;
-
-const moonsContainer = document.getElementById("moon-menu-moon-container");
-const moonsTotal = document.getElementById("moon-menu-total");
-
-const toaster = document.getElementById("toaster");
-
-const selectionMenu = document.getElementById("selection-menu");
-const selectionMenuToggle = document.getElementById("selection-menu-header");
-selectionMenuToggle.onclick = openSelectionMenu;
-
-// INITIAL STATE
-const markMap = new Map();
-let i;
-
-// ---- ABLY WEBSOCKET ----
-initAbly().then(({ ably, clientId }) => {
+    ablySubUpdateMoonTotals(ably, clientId);
+    ablySubUpdateMoons(ably, clientId);
+    ablySubUpdateCaptures(ably, clientId);
+    ablySubUpdateAbilities(ably, clientId);
+    ablySubPostReset(ably, clientId);
+    ablySubGetAll(ably, clientId);
+}
+// PubSub Handlers
+function ablySubUpdateMoonTotals(ably, cliendId) {
     ably.subscribe("update:moonTotals", (msg) => {
         const data = msg.data;
 
@@ -59,6 +101,8 @@ initAbly().then(({ ably, clientId }) => {
             updateMoonCounter();
         }
     });
+}
+function ablySubUpdateMoons(ably, clientId) {
     ably.subscribe("update:moons", (msg) => {
         const data = msg.data;
 
@@ -73,7 +117,9 @@ initAbly().then(({ ably, clientId }) => {
         localStorage.setItem("moons", JSON.stringify([...moons]));
 
         if (data.kingdom == localStorage.getItem("kingdom")) updateMoonCounter();
-    })
+    });
+}
+function ablySubUpdateCaptures(ably, cliendId) {
     ably.subscribe("update:captures", (msg) => {
         const data = msg.data;
 
@@ -91,6 +137,8 @@ initAbly().then(({ ably, clientId }) => {
 
         localStorage.setItem("captures", JSON.stringify([...captures]));
     });
+}
+function ablySubUpdateAbilities(ably, cliendId) {
     ably.subscribe("update:abilities", (msg) => {
         const data = msg.data;
 
@@ -108,6 +156,13 @@ initAbly().then(({ ably, clientId }) => {
 
         localStorage.setItem("abilities", JSON.stringify([...abilities]));
     });
+}
+function ablySubPostReset(ably, clientId) {
+    ably.subscribe("post:reset", (msg) => {
+        resetProgress(1);
+    });
+}
+function ablySubGetAll(ably, clientId) {
     ably.subscribe("get:all", (msg) => {
         const data = msg.data;
         ably.publish("post:all", {
@@ -118,24 +173,12 @@ initAbly().then(({ ably, clientId }) => {
             abilities: localStorage.getItem("abilities"),
         });
     });
-    ably.subscribe("post:reset", (msg) => {
-        resetProgress(1);
-    });
-    
-    window.ably = ably;
-    window.clientId = clientId;
-});
-
-// SETUP
-initKingdomList();
-leafletInit();
-setSidebarContentCaptures();
-updateCurrentKingdom("Sand");
+}
 
 // ---- MAP ----
 // Map Setup
 function leafletInit() {
-    document.getElementById("map").style.width = `calc(100vw - ${parseFloat(window.getComputedStyle(sidebar).width)}px)`;
+    document.getElementById("map").style.width = `calc(100vw - ${parseFloat(window.getComputedStyle(nodes.sidebar).width)}px)`;
     const mapBounds = [fractionToLatLng([0, 0]), fractionToLatLng([1, 1])];
     window.leafletMap = L.map("map", {
         attributionControl: false,
@@ -150,12 +193,13 @@ function leafletInit() {
     //     iconSize: [36, 36],
     //     iconAnchor: [18, 18]
     // });
-    // const testMarker = L.marker(fractionToLatLng([0.5, 0.5]), { icon: testIcon, draggable: true });
+    // const testMarker = L.marker(fractionToLatLng([0.5, 0.5]), { icon: testIcon, draggable: true })
     // testMarker.on("moveend", (e) => {
     //     let location = testMarker.getLatLng();
     //     let [x, y] = latLngToFraction([location.lat, location.lng]);
     //     console.log(`"x": ${x},\n"y": ${y},`);
     // });
+    // testMarker.addTo(leafletMap);
     window.completedMoonsLayer = L.layerGroup([]).addTo(leafletMap);
     window.availableMoonsLayer = L.layerGroup([]).addTo(leafletMap);
     window.lockedMoonsLayer = L.layerGroup([]).addTo(leafletMap);
@@ -182,90 +226,138 @@ function latLngToFraction([lat, lng]) {
 // Icon Functions
 function icon(name) {
     return L.icon({
-        iconUrl: `/resource/icons/moon-${name}.png`,
+        iconUrl: `/resource/icons/${name}.png`,
         iconSize: [36, 36],
         iconAnchor: [18, 18]
     });
 }
 
 // ---- SIDEBAR ----
-function updateSidebarTab(newSidebarTab, singleColumn) {
+// Tab Changing
+function updateSidebarTab(newSidebarTab) {
     if (localStorage.getItem("sidebarTab")) document.getElementById(`sidebar-tab-${localStorage.getItem("sidebarTab")}`).classList.remove("selected");
     document.getElementById(`sidebar-tab-${newSidebarTab}`).classList.add("selected");
 
     localStorage.setItem("sidebarTab", newSidebarTab);
 
-    sidebarContent.innerHTML = "";
-    sidebarContent.style.gridTemplateColumns = singleColumn ? "1fr" : "repeat(auto-fit, minmax(90px, 1fr))";
+    nodes.sidebarContent.innerHTML = "";
 }
 function setSidebarContentCaptures() {
-    updateSidebarTab("captures", 0);
+    updateSidebarTab("captures");
 
     let savedCaptures = new Set(JSON.parse(localStorage.getItem("captures")) ?? []);
+
+    let category = sidebarCreateCategory("", 1);
 
     captures.forEach((capture) => {
         let el = document.createElement("div");
         el.id = `capture-tracker-${normalizeName(capture)}`;
         if (!savedCaptures.has(normalizeName(capture))) el.classList.add("locked");
-        el.innerHTML = !localStorage.getItem("showText") ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+        el.innerHTML = Number(localStorage.getItem("showText")) ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
         el.onclick = clickCapture;
-        sidebarContent.appendChild(el);
+        category.appendChild(el);
         setTimeout(wrapText, 1, el);
     })
 }
 function setSidebarContentAbilities() {
-    updateSidebarTab("abilities", 0);
+    updateSidebarTab("abilities");
 
     let savedAbilties = new Set(JSON.parse(localStorage.getItem("abilities")) ?? []);
+
+    let category = sidebarCreateCategory("", 1);
 
     abilities.forEach((ability) => {
         let el = document.createElement("div");
         el.id = `ability-tracker-${normalizeName(ability)}`;
         if (!savedAbilties.has(normalizeName(ability))) el.classList.add("locked");
-        el.innerHTML = !localStorage.getItem("showText") ? `<p>${ability}</p>` : `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+        el.innerHTML = Number(localStorage.getItem("showText")) ? `<p>${ability}</p>` : `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
         el.onclick = clickAbility;
-        sidebarContent.appendChild(el);
+        category.appendChild(el);
         setTimeout(wrapText, 1, el);
     });
 }
 function setSidebarContentSubAreas() {
-    updateSidebarTab("subAreas", 0);
+    updateSidebarTab("subAreas");
+
+    let category = sidebarCreateCategory("", 0);
+
+    let subAreaList = subAreas.get(localStorage.getItem("kingdom"));
+
+    subAreaList.forEach((subArea) => {
+        let el = document.createElement("div");
+        el.id = `moonlist-tracker-${subArea.id}`;
+        el.innerHTML = `<p>${subArea.name}</p>`;
+
+
+
+        category.append(el);
+    });
 }
 function setSidebarContentLoadingZones() {
-    updateSidebarTab("loadingZones", 0);
+    updateSidebarTab("loadingZones");
+
+    let availableCategory = sidebarCreateCategory("Available", 0);
+    let lockedCategory = sidebarCreateCategory("Locked", 0);
+    let linkedCategory = sidebarCreateCategory("Linked", 0);
+
+    let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
+    let zoneList = zones.get(localStorage.getItem("kingdom"));
+
+    zoneList.forEach((zone) => {
+        let el = document.createElement("div");
+        el.id = `moonlist-tracker-${zone.kingdomId}`;
+        el.innerHTML = `<img src="/resource/icons/${zone.type}${linkMap.has(zone.id) ? "-linked" : ""}.png" alt="Moon" title="" draggable="false"><p>${zone.name}<br /></p>`;
+        el.onclick = () => { setSelection(`${zone.type}-${zone.kingdomId}`)};
+        if (linkMap.has(zone.id)) {
+            el.style.backgroundColor = "var(--toast-positive-background)";
+            linkedCategory.append(el);
+
+            let target = linkMap.get(zone.id);
+            let targetData = zones.get(target.split("-")[0]).find((zone) => zone.id == target.split("-")[1]);
+
+            let el2 = document.createElement("span");
+            el2.classList.add("selection-menu-moon-number");
+            el2.textContent = `To: ${target.split("-")[0]} - ${targetData.name}`
+            el.lastElementChild.append(el2);
+        } else if (evaluateLogic(zone.logic)) {
+            availableCategory.append(el);
+        } else {
+            el.style.backgroundColor = "var(--toast-negative-background)";
+            lockedCategory.append(el);
+        }
+    });
 }
 function setSidebarContentMoons() {
-    updateSidebarTab("moons", 0);
+    updateSidebarTab("moons");
     
-    // let availableCategory = sidebarCreateCategory("Available");
-    // let lockedCategory = sidebarCreateCategory("Locked");
-    // let collectedCategory = sidebarCreateCategory("Collected");
-
-    // sidebarContent.append(availableCategory);
-    // sidebarContent.append(lockedCategory);
-    // sidebarContent.append(collectedCategory);
+    let availableCategory = sidebarCreateCategory("Available", 0);
+    let lockedCategory = sidebarCreateCategory("Locked", 0);
+    let collectedCategory = sidebarCreateCategory("Collected", 0);
     
-    // let collectedSet = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
-    // let moonMap = new Set(JSON.parse(localStorage.getItem("moonMap")) ?? []);
-    // let moonList = moons.get(localStorage.getItem("kingdom"));
+    let collectedSet = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
+    let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
+    let moonList = moons.get(localStorage.getItem("kingdom"));
 
-    // moonList.forEach((moon) => {  
-    //     let el = document.createElement("div");
-    //     el.id = `moonlist-tracker-${moon.kingdomId})}`;
-    //     el.textContent = `Moon #${moon.kingdomId} - ${moon.name}`;
-    //     if (collectedSet.has(moon.id)) {
-    //         collectedCategory.append(el);
-    //     } else {
-    //         availableCategory.append(el);
-    //     }
-    //     // el.innerHTML = !localStorage.getItem("showText") ? `<p>${capture}</p>` : `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
-    //     // el.onclick = clickCapture;
-    //     // sidebarContent.appendChild(el);
-    //     // setTimeout(wrapText, 1, el);
-    // })
+    moonList.forEach((moon) => {
+        let actualKingdom = moonMap.get(moon.id)
+
+        let el = document.createElement("div");
+        el.id = `moonlist-tracker-${moon.kingdomId}`;
+        el.innerHTML = `<img src="/resource/icons/${moon.type == "multimoon" ? "moon" : "moon"}-${actualKingdom ? actualKingdom : "unknown"}${collectedSet.has(moon.id) ? "-complete" : ""}.png" alt="Moon" title="" draggable="false"><span class="selection-menu-moon-number">(${moon.kingdomId})</span>${moon.name}`;
+        el.onclick = () => { setSelection(`${moon.type}-${moon.kingdomId}`)};
+        if (collectedSet.has(moon.id)) {
+            el.style.backgroundColor = "var(--toast-positive-background)";
+            collectedCategory.append(el);
+        } else if (evaluateLogic(moon.logic)) {
+            availableCategory.append(el);
+        } else {
+            el.style.backgroundColor = "var(--toast-negative-background)";
+            lockedCategory.append(el);
+        }
+    });
 }
 function setSidebarContentDisplay() {
-    updateSidebarTab("display", 0);
+    updateSidebarTab("display");
 }
 function sidebarDrag(event) {
     let prevX = event.screenX;
@@ -273,14 +365,14 @@ function sidebarDrag(event) {
     window.onmousemove = (e) => {
         let curX = e.screenX;
 
-        let width = parseFloat(window.getComputedStyle(sidebar).width);
+        let width = parseFloat(window.getComputedStyle(nodes.sidebar).width);
 
         if (isNaN(width)) return;
 
         let clampWidth = Math.max(200, Math.min(width + (prevX - curX), 800));
 
-        sidebar.style.width = clampWidth + "px";
-        selectionMenu.style.right = (clampWidth + 70)+ "px";
+        nodes.sidebar.style.width = clampWidth + "px";
+        nodes.selectionMenu.style.right = (clampWidth + 70)+ "px";
         document.getElementById("map").style.width = `calc(100vw - ${clampWidth}px)`;
 
         prevX = curX;
@@ -290,13 +382,40 @@ function sidebarDrag(event) {
         window.onmouseup = null;
     }
 }
-function sidebarCreateCategory(name) {
+function sidebarCreateCategory(name, grid) {
     let el = document.createElement("div");
     el.id = `sidebar-content-category-${name}`;
     el.classList.add("sidebar-content-category");
-    el.innerHTML = `<h1>${name}</h1>`;
-
+    if (name) el.innerHTML = `<h1>${name}</h1>`;
+    if (grid) {
+        el.classList.add("sidebar-content-category-grid");
+    } else {
+        el.classList.add("sidebar-content-category-column");
+    }
+    nodes.sidebarContent.append(el);
     return el;
+}
+function refreshSidebar() {
+    switch (localStorage.getItem("sidebarTab")) {
+        case "captures":
+            setSidebarContentCaptures();
+            break;
+            case "abilities":
+            setSidebarContentAbilities();
+            break;
+            case "subAreas":
+            setSidebarContentSubAreas();
+            break;
+            case "loadingZones":
+            setSidebarContentLoadingZones();
+            break;
+            case "moons":
+            setSidebarContentMoons();
+            break;
+            case "display":
+            setSidebarContentDisplay();
+            break;
+    }
 }
 
 // ---- SUPER MARIO ODYSSEY TRACKER ----
@@ -319,6 +438,8 @@ function setCapture(capture, state) {
 
     localStorage.setItem("captures", JSON.stringify([...captures]));
     ably.publish("update:captures", { capture: capture, value: state });
+
+    checkAvailability();
 }
 // Ability Tracker
 function clickAbility(event) {
@@ -339,6 +460,8 @@ function setAbility(ability, state) {
 
     localStorage.setItem("abilities", JSON.stringify([...abilities]));
     ably.publish("update:abilities", { ability: ability, value: state });
+
+    checkAvailability();
 }
 // Moon Tracker
 function updateMoonCounter() {
@@ -353,15 +476,15 @@ function updateMoonCounter() {
     let total = !nomoonKingdoms.has(currentKingdom) ? moonTotals.get(currentKingdom) ?? 0 : 0;
     let empty = total ? total - amount : 0;
 
-    moonsContainer.innerHTML = "";
+    nodes.moonsContainer.innerHTML = "";
 
-    for (i = 0; i < amount; i++) {
+    for (let i = 0; i < amount; i++) {
         createMoonIcon(currentKingdom, removeMoon);
     }
 
     if (amount < total) createMoonIcon("emptyplus", addMoon);
 
-    for (i = 1; i < empty; i++) {
+    for (let i = 1; i < empty; i++) {
         createMoonIcon("empty", addMoon);
     }
 
@@ -371,12 +494,12 @@ function updateMoonCounter() {
 }
 function createMoonIcon(name, onclick) {
     let el = document.createElement("img");
-        el.src = `/resource/icons/moon-${name}.png`;
-        el.alt="Moon";
-        el.title="";
-        el.draggable=false;
-        el.onclick = onclick;
-        moonsContainer.appendChild(el);
+    el.src = `/resource/icons/moon-${name}.png`;
+    el.alt="Moon";
+    el.title="";
+    el.draggable=false;
+    el.onclick = onclick;
+    nodes.moonsContainer.appendChild(el);
 }
 function addMoon() {
     const currentKingdom = localStorage.getItem("kingdom");
@@ -412,13 +535,13 @@ function removeMoon() {
     let moon = moons.get(currentKingdom) ?? 0;
     let total = !nomoonKingdoms.has(currentKingdom) ? moonTotals.get(currentKingdom) ?? 0 : 0;
 
-    if (moon <= 0) return;
+    if (moon <= 0) moon = 0;
 
     if (!total || moon > total) {
-        moonsContainer.lastElementChild.remove();
+        nodes.moonsContainer.lastElementChild.remove();
         updateMoonIcon("plus", -1, addMoon);
     } else if (moon == total) {
-        moonsContainer.lastElementChild.remove();
+        nodes.moonsContainer.lastElementChild.remove();
         updateMoonIcon("emptyplus", -1, addMoon);
     } else {
         updateMoonIcon("empty", moon, addMoon);
@@ -432,8 +555,8 @@ function removeMoon() {
     ably.publish("update:moons", { kingdom: currentKingdom, value: moon });
 }
 function updateMoonIcon(name, index, onclick) {
-    if (index < 0) index = moonsContainer.children.length + index;
-    let el = moonsContainer.children[index];
+    if (index < 0) index = nodes.moonsContainer.children.length + index;
+    let el = nodes.moonsContainer.children[index];
     el.src = `/resource/icons/moon-${name}.png`;
     el.onclick = onclick;
 }
@@ -501,7 +624,7 @@ function initKingdomList() {
         el.id = `kingdom-list-${normalizeName(kingdom)}`;
         el.innerHTML = `<img src="/resource/kingdoms/${normalizeName(kingdom)}.png" alt="${kingdom}" title="${kingdom}" draggable="false">`;
         el.onclick = clickKingdom;
-        kingdomList.appendChild(el);
+        nodes.kingdomList.appendChild(el);
     });
 }
 function clickKingdom(event) {
@@ -518,30 +641,246 @@ function updateCurrentKingdom(currentKingdom) {
     let total = !nomoonKingdoms.has(currentKingdom) ? moonTotals.get(currentKingdom) ?? 0 : 0;
 
     if (!nomoonKingdoms.has(currentKingdom)) {
-        moonsTotal.innerHTML = `(<span id="moon-menu-total-editor" contenteditable="false">${total ? total : "??"}</span>)`;
+        nodes.moonsTotal.innerHTML = `(<span id="moon-menu-total-editor" contenteditable="false">${total ? total : "??"}</span>)`;
         document.getElementById("moon-menu-total-editor").onclick = setMoonTotal;
     } else {
-        moonsTotal.innerHTML = "";
+        nodes.moonsTotal.innerHTML = "";
     }
 
     leafletMap.setView([0, 0], 0);
     mapLayer.setUrl(`/resource/maps/${currentKingdom}.png`);
     
+    availableMoonsLayer.clearLayers();
+    lockedMoonsLayer.clearLayers();
     completedMoonsLayer.clearLayers();
+    availableZonesLayer.clearLayers();
+    lockedZonesLayer.clearLayers();
+    linkedZonesLayer.clearLayers();
 
     let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
+    let collectedSet = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
+    let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
+    markMap.clear();
 
     moons.get(currentKingdom).forEach((moon) => {
-        let mark = L.marker(fractionToLatLng([moon.x, moon.y]), { icon: icon(moonMap.has(moon.id) ? moonMap.get(moon.id) : "unknown"),  });
+        let mark = L.marker(fractionToLatLng([moon.x, moon.y]), { icon: 
+            (collectedSet.has(moon.id) ?
+                (icon(moonMap.has(moon.id) ? `moon-${moonMap.get(moon.id)}-complete` : "moon-unknown-complete"))
+                : (icon(moonMap.has(moon.id) ? `moon-${moonMap.get(moon.id)}` : "moon-unknown"))
+            )
+        });
+        mark.moonId = `${moon.type}-${moon.kingdomId}`;
         mark.on("click", (e) => {
-            setSelection(`${moon.type}-${moon.kingdomId}`);
+            setSelection(mark.moonId);
         });
         markMap.set(moon.id, mark);
-        completedMoonsLayer.addLayer(mark);
+
+        if (moon.subarea) return;
+
+        if (collectedSet.has(moon.id)) {
+            completedMoonsLayer.addLayer(mark);
+        } else if (evaluateLogic(moon.logic)) {
+            availableMoonsLayer.addLayer(mark);
+        } else {
+            lockedMoonsLayer.addLayer(mark);
+        }
     });
 
-    setSelection("");
+    zones.get(currentKingdom).forEach((zone) => {
+        let mark = L.marker(fractionToLatLng([zone.x, zone.y]), { icon: (linkMap.has(zone.id) ? icon(`${zone.type}-linked`) : icon(zone.type)) });
+        mark.zoneId = `${zone.type}-${zone.kingdomId}`;
+        mark.on("click", (e) => {
+            setSelection(mark.zoneId);
+        });
+        markMap.set(zone.id, mark);
+
+        if (zone.subarea) return;
+
+        if (linkMap.has(zone.id)) {
+            linkedZonesLayer.addLayer(mark);
+        } else if (evaluateLogic(zone.logic)) {
+            availableZonesLayer.addLayer(mark);
+        } else {
+            lockedZonesLayer.addLayer(mark);
+        }
+    });
+
+    updateMapWithDisplaySettings();
+    refreshSidebar();
+
+    if (!Number(localStorage.getItem("selectPersist"))) setSelection("");
     updateMoonCounter();
+}
+// Logic
+function evaluateLogic(logic) {
+    function predicate (value) {
+        if (typeof value == "object") {
+            return evaluateLogic(value);
+        } else if (typeof value == "string") {
+            if (value.charAt(0) == "c") { // Capture
+                return new Set(JSON.parse(localStorage.getItem("captures")) ?? []).has(normalizeName(value.substring(1)));
+            } else if (value.charAt(0) == "a") { // Ability
+                return new Set(JSON.parse(localStorage.getItem("abilities")) ?? []).has(normalizeName(value.substring(1)));
+            } else if (value.charAt(0) == "m") { // Moon
+                return new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []).has(Number(value.substring(1)));
+            } else if (value.charAt(0) == "l") { // Loading Zone
+                return new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []).has(Number(value.substring(1)));
+            } else if (value.charAt(0) == "g") { // Group
+                let group = groups.get(value.substring(1));
+                return group ? evaluateLogic(group) : false;
+            } else if (value.charAt(0) == "w") { // World Peace
+                let peace = worldPeace.get(value.substring(1));
+                return peace ? evaluateLogic(peace) : false;
+            } else if (value.charAt(0) == "o") { // Outfit
+                return new Set(JSON.parse(localStorage.getItem("outfits")) ?? []).has(normalizeName(value.substring(1)));
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    switch (logic.op) {
+        case "TRUE":
+            return 1;
+        case "FALSE":
+            return 0;
+        case "AND":
+            return logic.reqs.every(predicate);
+        case "OR":
+            return logic.reqs.some(predicate);
+        default:
+            return 0;
+    }
+}
+// Display Settings
+function updateMapWithDisplaySettings() {
+    
+    completedMoonsLayer.eachLayer((layer) => {
+        layer.off("click");
+        if (Number(localStorage.getItem("display:completed"))) {
+            layer.on("click", (e) => {
+                setSelection(layer.moonId);
+            });
+            layer.setOpacity(0.5);
+            layer._icon.style.cursor = "pointer";
+        } else {
+            layer.setOpacity(0);
+            layer._icon.style.cursor = "grab";
+        }
+    });
+    lockedMoonsLayer.eachLayer((layer) => {
+        layer.off("click");
+        if (Number(localStorage.getItem("display:locked"))) {
+            layer.on("click", (e) => {
+                setSelection(layer.moonId);
+            });
+            layer.setOpacity(0.5);
+            layer._icon.style.cursor = "pointer";
+        } else {
+            layer.setOpacity(0);
+            layer._icon.style.cursor = "grab";
+        }
+    });
+    availableMoonsLayer.eachLayer((layer) => {
+        layer.off("click");
+        layer.on("click", (e) => {
+            setSelection(layer.moonId);
+        });
+        layer.setOpacity(1);
+        layer._icon.style.cursor = "pointer";
+    });
+
+    linkedZonesLayer.eachLayer((layer) => {
+        layer.off("click");
+        if (Number(localStorage.getItem("display:completed"))) {
+            layer.on("click", (e) => {
+                setSelection(layer.zoneId);
+            });
+            layer.setOpacity(1);
+            layer._icon.style.cursor = "pointer";
+        } else {
+            layer.on("click", (e) => {
+                setSelection(layer.zoneId);
+            });
+            layer.setOpacity(0.5);
+            layer._icon.style.cursor = "pointer";
+        }
+    });
+    lockedZonesLayer.eachLayer((layer) => {
+        layer.off("click");
+        if (Number(localStorage.getItem("display:locked"))) {
+            layer.on("click", (e) => {
+                setSelection(layer.zoneId);
+            });
+            layer.setOpacity(0.5);
+            layer._icon.style.cursor = "pointer";
+        } else {
+            layer.setOpacity(0);
+            layer._icon.style.cursor = "grab";
+        }
+    });
+    availableZonesLayer.eachLayer((layer) => {
+        layer.off("click");
+        layer.on("click", (e) => {
+            setSelection(layer.zoneId);
+        });
+        layer.setOpacity(1);
+        layer._icon.style.cursor = "pointer";
+    });
+}
+function checkAvailability() {
+    let collectedMap = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
+
+    let moonList = moons.get(localStorage.getItem("kingdom"));
+
+    moonList.forEach((moon) => {
+        if (moon.subarea != "") return;
+
+        let mark = markMap.get(moon.id);
+
+        if (collectedMap.has(moon.id)) {
+            mark.removeFrom(availableMoonsLayer);
+            mark.removeFrom(lockedMoonsLayer);
+            mark.addTo(completedMoonsLayer);
+        } else if (evaluateLogic(moon.logic)) {
+            mark.removeFrom(completedMoonsLayer);
+            mark.removeFrom(lockedMoonsLayer);
+            mark.addTo(availableMoonsLayer);
+        } else {
+            mark.removeFrom(availableMoonsLayer);
+            mark.removeFrom(completedMoonsLayer);
+            mark.addTo(lockedMoonsLayer);
+        }
+    });
+
+    let zoneList = zones.get(localStorage.getItem("kingdom"));
+
+    zoneList.forEach((zone) => {
+        if (zone.subarea != "") return;
+
+        let mark = markMap.get(zone.id);
+
+        // if (collectedMap.has(moon.id)) {
+        //     mark.removeFrom(availableMoonsLayer);
+        //     mark.removeFrom(lockedMoonsLayer);
+        //     mark.addTo(completedMoonsLayer);
+        // } else
+        if (evaluateLogic(zone.logic)) {
+            mark.removeFrom(linkedZonesLayer);
+            mark.removeFrom(lockedZonesLayer);
+            mark.addTo(availableZonesLayer);
+        } else {
+            mark.removeFrom(availableZonesLayer);
+            mark.removeFrom(linkedZonesLayer);
+            mark.addTo(lockedZonesLayer);
+        }
+    });
+
+    setSelection(localStorage.getItem("selection"));
+    updateMapWithDisplaySettings();
+    refreshSidebar();
 }
 
 // ---- TOAST ----
@@ -577,36 +916,31 @@ function copyLink() {
     hideToast("toast-link-div");
 }
 
+
 // ---- SELECTION MENU ----
+// Open/Close Selection Menu
 function openSelectionMenu() {
-    selectionMenu.style.marginBottom = "0px";
+    nodes.selectionMenu.style.marginBottom = "0px";
     document.getElementById("selection-menu-header-collapse").style.transform = "rotate(0deg)";
-    selectionMenuToggle.onclick = closeSelectionMenu;
+    nodes.selectionMenuHeader.onclick = closeSelectionMenu;
 }
 function closeSelectionMenu() {
-    selectionMenu.style.marginBottom = (-parseFloat(window.getComputedStyle(selectionMenu).height) + 50) + "px";
+    nodes.selectionMenu.style.marginBottom = (-parseFloat(window.getComputedStyle(nodes.selectionMenu).height) + 50) + "px";
     document.getElementById("selection-menu-header-collapse").style.transform = "rotate(180deg)";
-    selectionMenuToggle.onclick = openSelectionMenu;
+    nodes.selectionMenuHeader.onclick = openSelectionMenu;
 }
 function setSelection(selection) {
     localStorage.setItem("selection", selection);
-    
-    if (localStorage.getItem("selectPersist")) return;
 
-    let title = document.getElementById("selection-menu-header-title");
-    let icon = document.getElementById("selection-menu-header-icon");
-    let picture = document.getElementById("selection-menu-content-picture");
-    let description = document.getElementById("selection-menu-content-description");
-    let buttons = document.getElementById("selection-menu-content-buttons");
+    nodes.selectionMenuButtons.innerHTML = "";
 
-    buttons.innerHTML = "";
-
-    if (selection == "") {
+    if (!Number(localStorage.getItem("selectPersist")) && selection == "") {
         closeSelectionMenu();
-        title.textContent = "No Selection";
-        icon.src = `/resource/icons/moon-empty.png`;
-        picture.src = `/resource/icons/moon-empty.png`;
-        description.textContent = "Select an icon to see details.";
+        nodes.selectionMenuTitle.textContent = "No Selection";
+        nodes.selectionMenuIcon.src = `/resource/icons/moon-empty.png`;
+        nodes.selectionMenuPicture.src = `/resource/icons/moon-empty.png`;
+        nodes.selectionMenuDescription.textContent = "Select an icon to see details.";
+        nodes.selectionMenuHeader.style.backgroundColor = "var(--medium-gray)";
         return;
     }
 
@@ -614,73 +948,82 @@ function setSelection(selection) {
     let kingdomId = selection.split("-")[1];
 
     switch (type) {
-        case "moon": {
-            let data = moons.get(localStorage.getItem("kingdom"))[Number(kingdomId) - 1];
-            let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
+        case "multimoon":
+            var multi = 1;
+        case "moon":
+            var data = moons.get(localStorage.getItem("kingdom"))[Number(kingdomId) - 1];
+            var moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
+            var collectedSet = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
 
-            title.textContent = data.name;
+            nodes.selectionMenuTitle.textContent = data.name;
 
-            let actualKingdom = moonMap.get(data.id);
+            var actualKingdom = moonMap.get(data.id) ?? "unknown";
 
-            buttons.append(addMoonSelectionButtons(data.id, 0));
+            nodes.selectionMenuButtons.append(addMoonSelectionButtons(data.id, multi ?? 0));
 
-            if (actualKingdom) {
-                updateSelectionTitleIcon("moon", actualKingdom);
-                description.textContent = `This is a ${actualKingdom} power moon.`;
+            nodes.selectionMenuPicture.src = `/resource/moons/${actualKingdom}.png`;
+            nodes.selectionMenuDescription.innerHTML = `<span class="selection-menu-moon-number">(${data.kingdomId})</span>${data.name}`;
+
+            if (collectedSet.has(data.id)) {
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-positive-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/moon-${actualKingdom}-complete.png`;
+            } else if (evaluateLogic(data.logic)) {
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-incomplete-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/moon-${actualKingdom}.png`;
             } else {
-                updateSelectionTitleIcon("moon", "unknown");
-                description.textContent = "This is a mystery power moon.";
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-negative-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/moon-${actualKingdom}.png`;
             }
 
-            buttons.append(addMoonCollectionButton(data.id));
+            nodes.selectionMenuButtons.append(addMoonCollectionButton(data.id));
 
             break;
-        }
-        case "multimoon": {
-            let data = moons.get(localStorage.getItem("kingdom"))[Number(kingdomId) - 1];
-            let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
+        case "pipe":
+        case "moonpipe":
+        case "door":
+            var data = zones.get(localStorage.getItem("kingdom"))[Number(kingdomId) - 1];
+            var linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
 
-            title.textContent = data.name;
+            nodes.selectionMenuTitle.textContent = data.name;
 
-            let actualKingdom = moonMap.get(data.id);
+            if (linkMap.has(Number(data.id))) {
+                let target = linkMap.get(Number(data.id));
+                let targetData = zones.get(target.split("-")[0]).find((zone) => zone.id == Number(target.split("-")[1]));
 
-            buttons.append(addMoonSelectionButtons(data.id, 1));
-
-            if (actualKingdom) {
-                updateSelectionTitleIcon("moon", actualKingdom);
-                description.textContent = `This is a ${actualKingdom} multi-moon.`;
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-positive-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/${data.type}-linked.png`;
+                nodes.selectionMenuDescription.innerHTML = `<span class="selection-menu-moon-number">This loading zone links to:</span><br />${target.split("-")[0]}: ${targetData.name}`;
+            } else if (evaluateLogic(data.logic)) {
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-incomplete-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/${data.type}.png`;
+                nodes.selectionMenuDescription.textContent = "This is a unlinked loading zone.";
             } else {
-                updateSelectionTitleIcon("moon", "unknown");
-                description.textContent = "This is a mystery multi-moon.";
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-negative-background)";
+                nodes.selectionMenuIcon.src = `/resource/icons/${data.type}.png`;
+                nodes.selectionMenuDescription.textContent = "This is a unlinked loading zone.";
             }
+            
 
-            buttons.append(addMoonCollectionButton(data.id));
-
-            break;
-        }
+            nodes.selectionMenuButtons.append(addZoneLinkButton(data.id));
     }
 
     openSelectionMenu();
 }
-function updateSelectionTitleIcon(type, value) {
-    document.getElementById("selection-menu-header-icon").src = `/resource/icons/${type}-${value}.png`;
-    document.getElementById("selection-menu-content-picture").src = `/resource/${type}s/${value}.png`;
-}
-
-// CHANGE MOON TO MULTIMOON
+// Moon Buttons
+// Note: Change multimoon src path
 function addMoonSelectionButtons(id, multi) {
     let container = document.createElement("div");
     container.classList.add("selection-menu-content-button-grid");
 
     [...(multi ? multimoonKingdoms : moonKingdoms)].forEach((kingdom) => {
         let el = document.createElement("div");
-        el.innerHTML = `<img src="/resource/icons/${multi ? "moon" : "moon"}-${kingdom}.png">`;
+        el.innerHTML = `<img src="/resource/icons/${multi ? "moon" : "moon"}-${kingdom}.png" alt="${kingdom}" title="${kingdom}">`;
         el.onclick = moonSetKingdom(id, kingdom, multi);
         container.append(el);
     });
 
     let el = document.createElement("div");
-    el.innerHTML = `<img src="/resource/eraser.png" alt="Eraser" title="Clear">`;
+    el.innerHTML = `<img src="/resource/eraser.png" alt="Eraser" title="Clear" draggable="false">`;
     el.onclick = moonSetKingdom(id, "");
     container.append(el);
 
@@ -688,46 +1031,69 @@ function addMoonSelectionButtons(id, multi) {
 }
 function moonSetKingdom(id, kingdom, multi) {
     return (e) => {
+        let data = moons.get(localStorage.getItem("kingdom")).find((moon) => moon.id == id);
         let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
         let collectedMap = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
 
         let oldKingdom = moonMap.get(id);
+        let mark = markMap.get(id);
 
         if (kingdom == "") {
             moonMap.delete(id);
-            markMap.get(id).setIcon(icon("unknown"));
-            updateSelectionTitleIcon(multi ? "moon" : "moon", "unknown");
-            document.getElementById("selection-menu-content-description").textContent = `This is a mystery ${multi ? "multi-" : "power "}moon.`;
+            mark.setIcon(icon("moon-unknown"));
+            nodes.selectionMenuPicture.src = `/resource/${multi ? "moon" : "moon"}s/unknown.png`;
         } else {
             moonMap.set(id, kingdom);
-            markMap.get(id).setIcon(icon(kingdom));
-            updateSelectionTitleIcon(multi ? "moon" : "moon", kingdom);
-            document.getElementById("selection-menu-content-description").textContent = `This is a ${kingdom} ${multi ? "multi-" : "power "}moon.`;
+            mark.setIcon(icon(`moon-${kingdom}`));
+            nodes.selectionMenuPicture.src = `/resource/${multi ? "moon" : "moon"}s/${kingdom}.png`;
         }
 
+        
+
         if (collectedMap.has(id)) {
-            let moons = new Map(JSON.parse(localStorage.getItem("moons")) ?? []);
+            let moonList = new Map(JSON.parse(localStorage.getItem("moons")) ?? []);
 
             if (oldKingdom) {
-                let oldMoon = moons.get(oldKingdom) ?? 0;
+                let oldMoon = moonList.get(oldKingdom) ?? 0;
 
-                moons.set(oldKingdom, --oldMoon);
+                if (data.type == "multimoon") {
+                    oldMoon -= 3;
+                } else {
+                    oldMoon--;
+                }
+
+                moonList.set(oldKingdom, oldMoon);
 
                 ably.publish("update:moons", { kingdom: oldKingdom, value: oldMoon });
             }
 
             if (kingdom) {
-                let newMoon = moons.get(kingdom) ?? 0;
+                let newMoon = moonList.get(kingdom) ?? 0;
+
+                if (data.type == "multimoon") {
+                    newMoon += 3;
+                } else {
+                    newMoon++;
+                }
             
-                moons.set(kingdom, ++newMoon)
+                moonList.set(kingdom, newMoon);
 
                 ably.publish("update:moons", { kingdom: kingdom, value: newMoon });
             }
             
-            localStorage.setItem("moons", JSON.stringify([...moons]));
+            localStorage.setItem("moons", JSON.stringify([...moonList]));
+
+            mark.setIcon(icon(`${multi ? "moon" : "moon"}-${kingdom ? kingdom : "unknown"}-complete`));
+            nodes.selectionMenuIcon.src = `/resource/icons/${multi ? "moon" : "moon"}-${kingdom ? kingdom : "unknown"}-complete.png`;
+        } else {
+            mark.setIcon(icon(`${multi ? "moon" : "moon"}-${kingdom ? kingdom : "unknown"}`));
+            nodes.selectionMenuIcon.src = `/resource/icons/${multi ? "moon" : "moon"}-${kingdom ? kingdom : "unknown"}.png`;
         }
 
         localStorage.setItem("moonMap", JSON.stringify([...moonMap]));
+
+        if (kingdom == localStorage.getItem("kingdom") || oldKingdom == localStorage.getItem("kingdom")) updateMoonCounter();
+        refreshSidebar();
     }
 }
 function addMoonCollectionButton(id) {
@@ -770,20 +1136,36 @@ function addMoonCollectionButton(id) {
 }
 function moonSetCollected(id, state, container) {
     return (e) => {
-        let moons = new Map(JSON.parse(localStorage.getItem("moons")) ?? []);
+        let data = moons.get(localStorage.getItem("kingdom")).find((moon) => moon.id == id);
+        let savedMoons = new Map(JSON.parse(localStorage.getItem("moons")) ?? []);
         let moonMap = new Map(JSON.parse(localStorage.getItem("moonMap")) ?? []);
         let collectedMap = new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []);
 
-        let kingdom = moonMap.get(id);
-        let moon = moons.get(kingdom) ?? 0;
+        let kingdom = moonMap.get(id) ?? "unknown";
+        let moon = savedMoons.get(kingdom) ?? 0;
+
+        let mark = markMap.get(id);
 
         let button = container.firstElementChild;
         let eraser = container.lastElementChild;
 
         if (state) {
             collectedMap.add(id);
-            moon++;
+
+            if (data.type == "multimoon") {
+                moon += 3;
+            } else {
+                moon++;
+            }
             
+            mark.removeFrom(availableMoonsLayer);
+            mark.removeFrom(lockedMoonsLayer);
+            mark.addTo(completedMoonsLayer);
+            nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-positive-background)";
+
+            mark.setIcon(icon(`moon-${kingdom}-complete`));
+            nodes.selectionMenuIcon.src = `/resource/icons/moon-${kingdom}-complete.png`;
+
             button.onclick = null;
 
             button.textContent = "Collected";
@@ -799,7 +1181,23 @@ function moonSetCollected(id, state, container) {
             }, 300)
         } else {
             collectedMap.delete(id);
-            moon--;
+            
+            if (data.type == "multimoon") {
+                moon -= 3;
+            } else {
+                moon--;
+            }
+
+            if (evaluateLogic(data.logic)) {
+                mark.addTo(availableMoonsLayer);
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-incomplete-background)";
+            } else {
+                mark.addTo(lockedMoonsLayer);
+                nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-negative-background)";
+            }
+
+            mark.setIcon(icon(`moon-${kingdom}`));
+            nodes.selectionMenuIcon.src = `/resource/icons/moon-${kingdom}.png`;
 
             eraser.onclick = null;
 
@@ -815,39 +1213,275 @@ function moonSetCollected(id, state, container) {
                 button.onclick = moonSetCollected(id, 1, container);
             }, 300);
         }
-        if (kingdom != undefined) {
-            moons.set(kingdom, moon);
+        if (kingdom != "unknown") {
+            savedMoons.set(kingdom, moon);
 
-            localStorage.setItem("moons", JSON.stringify([...moons]));
+            localStorage.setItem("moons", JSON.stringify([...savedMoons]));
+
+            if (localStorage.getItem("kingdom") == kingdom) updateMoonCounter();
+
+            ably.publish("update:moons", { kingdom: kingdom, value: moon });
         }
 
         localStorage.setItem("collectedMap", JSON.stringify([...collectedMap]));
 
-        if (localStorage.getItem("kingdom") == kingdom) updateMoonCounter();
-
-        ably.publish("update:moons", { kingdom: kingdom, value: moon });
+        updateMapWithDisplaySettings();
+        checkAvailability();
+        refreshSidebar();
     }
 }
+// Loading Zone Buttons
+// Note: pass data directly in
+function addZoneLinkButton(id) {
+    let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
 
+    let container = document.createElement("div");
+    container.classList.add("selection-menu-content-button-line");
+
+    let button = document.createElement("div");
+    let eraser = document.createElement("div");
+
+    eraser.classList.add("selection-menu-content-button");
+    eraser.innerHTML = `<img src="/resource/eraser.png" alt="Eraser" title="Clear">`;
+
+    if (linkMap.has(id)) {
+        container.style.gap = "5px";
+        button.innerText = "Warp";
+        button.onclick =  zoneWarp(id);
+        button.style.cursor = "auto";
+        eraser.onclick = zoneUnlink(id, container);
+        eraser.style.width = "38px";
+        eraser.style.borderWidth = "1px";
+        eraser.style.padding = "7px";
+        eraser.style.opacity = "1" ;
+    } else {
+        container.style.gap = "0";
+        let linkingZoneId = localStorage.getItem("linking");
+        if (linkingZoneId == id) {
+            button.innerText = "Cancel Linking";
+            button.onclick = cancelZoneLink;
+        } else if (linkingZoneId) {
+            button.innerText = "Finish Linking";
+            button.onclick = zoneLinkFinish(id, container);
+        } else {
+            button.innerText = "Link";
+            button.onclick = zoneLinkStart(id, container);
+        }
+        button.style.cursor = "pointer";
+        eraser.onclick = null;
+        eraser.style.width = "0px";
+        eraser.style.padding = "7px 0px";
+        eraser.style.borderWidth = "0px";
+        eraser.style.opacity = "0";
+    }
+    container.append(button);
+    container.append(eraser);
+
+    return container;
+}
+function zoneLinkStart(id, container) {
+    return (e) => {
+        localStorage.setItem("selectPersist", 1);
+
+        let data = zones.get(localStorage.getItem("kingdom")).find((zone) => zone.id == id);
+
+        localStorage.setItem("linking", `${localStorage.getItem("kingdom")}-${id}`);
+
+        if (!document.getElementById("toast-linking-div")) {
+            let el = document.createElement("div");
+            el.classList.add("toast");
+            el.id = "toast-linking-div";
+            el.innerHTML = `<p class="toast-noborder">Linking to ${data.name}...<img id="toast-cancel" src="/resource/reveal.png" alt="Cancel" title="Cancel"></p>`;
+            nodes.toaster.appendChild(el);
+            el.style.top = "-200px";
+            let cancel = document.getElementById("toast-cancel");
+
+            cancel.onclick = cancelZoneLink;
+
+            setTimeout(showToast, 1, "toast-linking-div");
+        };
+
+        let button = container.firstElementChild;
+        let eraser = container.lastElementChild;
+
+        button.textContent = "Cancel linking";
+        button.onclick = cancelZoneLink;
+    }
+}
+function zoneLinkFinish(id, container) {
+    return (e) => {
+        localStorage.setItem("selectPersist", 0);
+
+        hideToast("toast-linking-div");
+
+        let targetZoneId = localStorage.getItem("linking");
+        let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
+
+        let data = zones.get(localStorage.getItem("kingdom")).find((zone) => zone.id == id);
+        let targetData = zones.get(targetZoneId.split("-")[0]).find((zone) => zone.id == Number(targetZoneId.split("-")[1]));
+
+        linkMap.set(id, targetZoneId);
+        linkMap.set(targetData.id, `${localStorage.getItem("kingdom")}-${id}`);
+
+        localStorage.setItem("linkMap", JSON.stringify([...linkMap]));
+        localStorage.setItem("linking", "");
+
+        let mark = markMap.get(id);
+
+        mark.setIcon(icon(`${data.type}-linked`));
+        nodes.selectionMenuIcon.src = `/resource/icons/${data.type}-linked.png`;
+        nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-positive-background)";
+        nodes.selectionMenuDescription.innerHTML = `<span class="selection-menu-moon-number">This loading zone links to:</span><br />${targetZoneId.split("-")[0]}: ${targetData.name}`;
+
+        mark.removeFrom(availableMoonsLayer);
+        mark.removeFrom(lockedMoonsLayer);
+        mark.addTo(completedMoonsLayer);
+            
+        if (localStorage.getItem("kingdom") == targetZoneId.split("-")[0]) {
+            let targetMark = markMap.get(targetData.id);
+            targetMark.setIcon(icon(`${targetData.type}-linked`));
+        }
+
+        let button = container.firstElementChild;
+        let eraser = container.lastElementChild;
+
+        button.onclick = zoneWarp(id);
+
+        button.textContent = "Warp";
+        button.style.cursor = "auto"
+        eraser.style.width = "38px";
+        container.style.gap = "5px";
+        eraser.style.borderWidth = "1px";
+        eraser.style.padding = "7px";
+        
+        setTimeout(() => {
+            eraser.style.opacity = "1" ;
+            eraser.onclick = zoneUnlink(id, container);
+        }, 300);
+
+        updateMapWithDisplaySettings();
+        refreshSidebar();
+    }
+}
+function cancelZoneLink() {
+    localStorage.setItem("selectPersist", 0);
+    localStorage.setItem("linking", "");
+
+    hideToast('toast-linking-div');
+
+    // If selection is loading zone, change button text
+}
+function zoneUnlink(id, container) {
+    return (e) => {
+        let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
+
+        let targetZoneId = linkMap.get(id);
+
+        let data = zones.get(localStorage.getItem("kingdom")).find((zone) => zone.id == id);
+        let targetData = zones.get(targetZoneId.split("-")[0]).find((zone) => zone.id == Number(targetZoneId.split("-")[1]));
+
+        linkMap.delete(id);
+        linkMap.delete(targetData.id);
+
+        localStorage.setItem("linkMap", JSON.stringify([...linkMap]));
+
+        let mark = markMap.get(id);
+
+        mark.setIcon(icon(`${data.type}`));
+        nodes.selectionMenuIcon.src = `/resource/icons/${data.type}.png`;
+        
+        mark.removeFrom(linkedZonesLayer);
+
+        if (evaluateLogic(data.logic)) {
+            mark.addTo(availableZonesLayer);
+            nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-incomplete-background)";
+        } else {
+            mark.addTo(lockedZonesLayer);
+            nodes.selectionMenuHeader.style.backgroundColor = "var(--toast-negative-background)";
+        }
+
+        let targetMark = markMap.get(targetData.id);
+        targetMark.setIcon(icon(`${targetData.type}`));
+
+        targetMark.removeFrom(linkedZonesLayer);
+
+        if (evaluateLogic(targetData.logic)) {
+            targetMark.addTo(availableZonesLayer);
+        } else {
+            targetMark.addTo(lockedZonesLayer);
+        }
+
+        let button = container.firstElementChild;
+        let eraser = container.lastElementChild;
+
+        eraser.onclick = null;
+
+        button.textContent = localStorage.getItem("linking") ? "Finish Linking" : "Link";
+        button.style.cursor = "pointer"
+        eraser.style.opacity = "0";
+        
+        setTimeout(() => {
+            eraser.style.width = "0";
+            container.style.gap = "0";
+            eraser.style.borderWidth = "0px";
+            eraser.style.padding = "7px 0px";
+            button.onclick = localStorage.getItem("linking") ? zoneLinkFinish(id, container) : zoneLinkStart(id, container);
+        }, 300);
+
+        updateMapWithDisplaySettings();
+        refreshSidebar();
+    }
+}
+function zoneWarp(id) {
+    return (e) => {
+        let linkMap = new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []);
+
+        let target = linkMap.get(id);
+        let targetData = zones.get(target.split("-")[0]).find((zone) => zone.id == target.split("-")[1])
+
+        if (localStorage.getItem("kingdom") != target.split("-")[0]) {
+            localStorage.setItem("selectPersist", 1);
+            updateCurrentKingdom(target.split("-")[0]);
+            localStorage.setItem("selectPersist", 0);
+        }
+
+        setSelection(`${targetData.type}-${targetData.kingdomId}`);
+
+        // setTimeout(() => {
+        //     leafletMap.setView(fractionToLatLng([targetData.x, targetData.y]), 3);
+        // }, 50)
+    }
+}
 
 // ---- HAMBURGER MENU ----
 // Open/Close Hamburger Menu
 function openHamburger() {
-    hamburgerMover.style.marginTop = "0";
+    nodes.hamburgerMover.style.marginTop = "0";
     setTimeout(() => {document.addEventListener("click", clickOffHamburger)}, 1);
-    hamburgerButton.onclick = closeHamburger;
+    nodes.hamburgerButton.onclick = closeHamburger;
 }
 function closeHamburger() {
-    hamburgerMover.style.marginTop = window.getComputedStyle(hamburgerMover).height;
-    hamburgerButton.onclick = openHamburger;
+    nodes.hamburgerMover.style.marginTop = window.getComputedStyle(nodes.hamburgerMover).height;
+    nodes.hamburgerButton.onclick = openHamburger;
 }
 function clickOffHamburger(event) {
-    if (!hamburgerMover.contains(event.target)) {
+    if (!nodes.hamburgerMover.contains(event.target)) {
         closeHamburger();
         document.removeEventListener("click", clickOffHamburger);
     }
 }
 // Hamburger Menu Buttons
+function initMenus() {
+    if (Number(localStorage.getItem("showText"))) {
+        nodes.settingsMenuTextToggle.checked = true;
+    }
+    if (Number(localStorage.getItem("darkMode"))) {
+        nodes.settingsMenuThemeToggle.checked = true;
+        nodes.root.style.setProperty("--background", "#0F0F13");
+    }
+    localStorage.removeItem("linking");
+    localStorage.removeItem("selectPersist");
+}
 function createLinkToast() {
     closeHamburger();
 
@@ -857,7 +1491,7 @@ function createLinkToast() {
     el.classList.add("toast");
     el.id = "toast-link-div";
     el.innerHTML = `<h1 class="toast-title">Copy this link into an OBS browser source.</h1><p id="toast-link"><span id="toast-link-text">http://localhost:3000/?roomId=************************************</span><img id="toast-reveal" src="/resource/reveal.png" alt="Eye" title="Reveal"><img id="toast-copy" src="/resource/link.png" alt="Link" title="Copy"></p>`;
-    toaster.appendChild(el);
+    nodes.toaster.appendChild(el);
     el.style.top = "-200px";
     let reveal = document.getElementById("toast-reveal");
     let copy = document.getElementById("toast-copy");
@@ -874,26 +1508,26 @@ function createLinkToast() {
 
 }
 function openSettings() {
-    settingsMenu.style.opacity = 1;
-    settingsMenu.style.zIndex = 300;
+    nodes.settingsMenu.style.opacity = 1;
+    nodes.settingsMenu.style.zIndex = 300;
 
     closeHamburger();
 
     document.getElementById("settings-close").onclick = (e) => {
-        settingsMenu.style.opacity = 0;
-        setTimeout(() => {settingsMenu.style.zIndex = -1}, 200);
+        nodes.settingsMenu.style.opacity = 0;
+        setTimeout(() => {nodes.settingsMenu.style.zIndex = -1}, 200);
         document.getElementById("settings-close").onclick = null;
     }
 }
 function openHelp() {
-    helpMenu.style.opacity = 1;
-    helpMenu.style.zIndex = 300;
+    nodes.helpMenu.style.opacity = 1;
+    nodes.helpMenu.style.zIndex = 300;
 
     closeHamburger();
 
     document.getElementById("help-close").onclick = (e) => {
-        helpMenu.style.opacity = 0;
-        setTimeout(() => {helpMenu.style.zIndex = -1}, 200);
+        nodes.helpMenu.style.opacity = 0;
+        setTimeout(() => {nodes.helpMenu.style.zIndex = -1}, 200);
         document.getElementById("help-close").onclick = null;
     }
 }
@@ -901,41 +1535,46 @@ function openHelp() {
 // ---- POPUP MENUS ----
 // Settings Menu
 function toggleImageText() {
-    showText = localStorage.getItem("showText");
+    let showText = nodes.settingsMenuTextToggle.checked;
 
-    if (!showText) {
+    if (showText) {
         localStorage.setItem("showText", 1);
 
-        // moons.forEach((kingdom) => {
-        //     let div = document.getElementById(`moon-tracker-${normalizeName(kingdom)}`);
-        //     div.innerHTML = div.innerHTML.replace(/<img.*?>/, `<p>${kingdom}</p>`);
-        //     wrapText(div);
-        // });
-
-        // abilities.forEach((ability) => {
-        //     let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
-        //     div.innerHTML = `<p>${ability}</p>`;
-        //     wrapText(div);
-        // });
-
-        // primaryCaptures.forEach((capture) => {
-        //     let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-        //     div.innerHTML = `<p>${capture}</p>`;
-        //     wrapText(div);
-        // });
-
-        // captures.forEach((capture) => {
-        //     let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-        //     div.innerHTML = `<p>${capture}</p>`;
-        //     wrapText(div);
-        // });
-
-        // let div = document.getElementById(`moon-tracker-moon`);
-        // div.innerHTML = div.innerHTML.replace(/<img.*?>/, `<p>Moon Requirements</p>`);
-        // wrapText(div);
-
+        switch (localStorage.getItem("sidebarTab")) {
+            case "captures":
+                captures.forEach((capture) => {
+                    let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+                    div.innerHTML = `<p>${capture}</p>`;
+                    wrapText(div);
+                });
+                break;
+            case "abilities":
+                abilities.forEach((ability) => {
+                    let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+                    div.innerHTML = `<p>${ability}</p>`;
+                    wrapText(div);
+                });
+                break;
+        }
     } else {
         localStorage.setItem("showText", 0);
+
+        switch (localStorage.getItem("sidebarTab")) {
+            case "captures":
+                captures.forEach((capture) => {
+                    let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
+                    div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
+                    wrapText(div);
+                });
+                break;
+            case "abilities":
+                abilities.forEach((ability) => {
+                    let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
+                    div.innerHTML = `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
+                    wrapText(div);
+                });
+                break;
+        }
 
         // moons.forEach((kingdom) => {
         //     let div = document.getElementById(`moon-tracker-${normalizeName(kingdom)}`);
@@ -944,44 +1583,41 @@ function toggleImageText() {
         // });
         
 
-        // abilities.forEach((ability) => {
-        //     let div = document.getElementById(`ability-tracker-${normalizeName(ability)}`);
-        //     div.innerHTML = `<img src="/resource/abilities/${normalizeName(ability)}.png" alt="${ability}" title="${ability}" draggable="false">`;
-        // });
+    
 
-        // primaryCaptures.forEach((capture) => {
-        //     let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-        //     div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
-            
-        // });
+    }
+}
+function toggleLightDarkMode() {
+    let togglePosition = nodes.settingsMenuThemeToggle.checked;
 
-        // captures.forEach((capture) => {
-        //     let div = document.getElementById(`capture-tracker-${normalizeName(capture)}`);
-        //     div.innerHTML = `<img src="/resource/captures/${normalizeName(capture)}.png" alt="${capture}" title="${capture}" draggable="false">`;
-        // });
+    if (togglePosition) {
+        localStorage.setItem("darkMode", 1);
 
-        // let div = document.getElementById(`moon-tracker-moon`);
-        // div.innerHTML = div.innerHTML.replace(/<p.*?>.*?<\/p>/, `<img src="/resource/moons/Mushroom.png" alt="Moon Requirements" title="Moon Requirements" draggable="false">`);
-        // wrapText(div);
+        nodes.root.style.setProperty("--background", "#0F0F13");
+
+    } else {
+        localStorage.setItem("darkMode", 0);
+
+        nodes.root.style.setProperty("--background", "#F2F2F2");
     }
 }
 // Reset Menu
 function confirmReset() {
-    resetMenu.style.opacity = 1;
-    resetMenu.style.zIndex = 300;
+    nodes.resetMenu.style.opacity = 1;
+    nodes.resetMenu.style.zIndex = 300;
 
     closeHamburger();
 
     document.getElementById("reset-yes").onclick = (e) => {
-        resetMenu.style.opacity = 0;
-        setTimeout(() => {resetMenu.style.zIndex = -1}, 200);
+        nodes.resetMenu.style.opacity = 0;
+        setTimeout(() => {nodes.resetMenu.style.zIndex = -1}, 200);
         document.getElementById("reset-yes").onclick = null;
         document.getElementById("reset-no").onclick = null;
         resetProgress();
     }
     document.getElementById("reset-no").onclick = (e) => {
-        resetMenu.style.opacity = 0;
-        setTimeout(() => {resetMenu.style.zIndex = -1}, 200);
+        nodes.resetMenu.style.opacity = 0;
+        setTimeout(() => {nodes.resetMenu.style.zIndex = -1}, 200);
         document.getElementById("reset-no").onclick = null;
         document.getElementById("reset-yes").onclick = null;
     }
@@ -1002,6 +1638,8 @@ function resetProgress(forward) {
 
     updateCurrentKingdom(localStorage.getItem("kingdom"));
 
+
+
     if (!nomoonKingdoms.has(localStorage.getItem("kingdom"))) document.getElementById('moon-menu-total-editor').textContent = "??";
 
     if (forward) ably.publish("post:reset", {});
@@ -1017,7 +1655,7 @@ function wrapText(target) {
     let style = window.getComputedStyle(target);
     let childStyle = window.getComputedStyle(child);
 
-    let targetWidth = target.clientWidth * 0.95 - 2 * parseFloat(style.padding);
+    let targetWidth = target.clientWidth - 2 * parseFloat(style.padding);
 
     if (child.scrollWidth <= targetWidth) return;
 

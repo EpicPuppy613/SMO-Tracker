@@ -4,7 +4,11 @@ export function clearCache() {
         "moonTotals",
         "captures",
         "abilities",
-        "moonMap"
+        "moonMap",
+        "collectedMap",
+        "linkMap",
+        "linking",
+        "selectPersist"
     ].forEach((variable) => {
         localStorage.removeItem(variable);
     });

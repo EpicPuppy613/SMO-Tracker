@@ -3,14 +3,16 @@
     --secondary: #2c2c2c;
     --accent1:	#333333;
     --accent2:	#0F0F13;
+    --background: #F2F2F2;
     --neutral-light: #F2F2F2;
     --medium-gray: #6f7d8a;
     --success: #47D17A;
     --locked: #4e4e4e;
-    --toast-positive-background: #749974;
+    --toast-positive-background: #97c797;
     --toast-positive-border: #465a46;
-    --toast-negative-background: #bd7878;
+    --toast-negative-background: #d8a0a0;
     --toast-negative-border: #855454;
+    --toast-incomplete-background: #e2c678;
 }
 
 @font-face {
@@ -29,7 +31,7 @@
 
 body {
     margin: 0;
-    background-color: var(--accent2);
+    background-color: var(--background);
     overflow: hidden;
     font-family: 'Fredoka One';
     user-select: none;
@@ -88,6 +90,7 @@ div#settings-menu div.setting-menu-line {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 5px 0px;
 }
 
 label.toggle-switch {
@@ -115,12 +118,12 @@ label.toggle-switch span.slider {
 
 label.toggle-switch span.slider::before {
     content: "";
-  position: absolute;
-  height: 18px; width: 18px;
-  left: 3px; bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.3s;
+    position: absolute;
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
 }
 
 label.toggle-switch input:checked + span.slider:before {

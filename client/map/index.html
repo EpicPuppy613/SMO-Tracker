@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- Hi :33 -->
 <head>
-    <title>SMO Tracker</title>
+    <title>SMO Randomizer Tracker</title>
     <link href="/css/shared.css" type="text/css" rel="stylesheet">
     <link href="/resource/favicon.png?v=1" type="image/png" rel="icon">
     <link href="/css/map.css" type="text/css" rel="stylesheet">
@@ -38,13 +38,21 @@
     <div class="menu" id="settings-menu">
         <h1>Settings</h1>
         <div class="setting-menu-line" id="setting-menu-showText">
-                <span>Show Icons</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="setting-menu-showText-toggle">
-                    <span class="slider"></span>
-                </label>
-                <span>Show Captions</span>
-            </div>
+            <span>Show Icons</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-menu-showText-toggle">
+                <span class="slider"></span>
+            </label>
+            <span>Show Captions</span>
+        </div>
+        <div class="setting-menu-line" id="setting-menu-lightDark">
+            <span>Light Theme</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="setting-menu-lightDark-toggle">
+                <span class="slider"></span>
+            </label>
+            <span>Dark Theme</span>
+        </div>
         <div class="menu-button-container">
             <p class="menu-button" id="settings-close">Close</p>
         </div>
@@ -91,20 +99,21 @@
     <div id="toaster"></div>
     <div id="selection-menu">
         <div id="selection-menu-header">
-            <img id="selection-menu-header-icon" src="/resource/icons/moon-empty.png">
+            <img id="selection-menu-header-icon" src="/resource/icons/moon-empty.png" draggable="false">
             <h1 id="selection-menu-header-title">No Selection</h1>
-            <img id="selection-menu-header-collapse" src="/resource/dropdown.png">
+            <img id="selection-menu-header-collapse" src="/resource/dropdown.png" draggable="false">
         </div>
         <div id="selection-menu-content">
-            <img id="selection-menu-content-picture" src="/resource/moons/Cascade.png">
-            <p id="selection-menu-content-description">This is a power moon.</p>
+            <img id="selection-menu-content-picture" src="/resource/icons/moon-empty.png" draggable="false">
+            <p id="selection-menu-content-description">Select an icon to see details.</p>
             <div id="selection-menu-content-buttons">
                 <div class="selection-menu-content-button">
-                    <p>Collect</p>
-                    <!-- <img src="/resource/icons/moon-cap.png"> -->
                 </div>
             </div>
         </div>
+    </div>
+    <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-weight: normal; filter: drop-shadow(white 0px 0px 4px);">
+        <h1>Alpha Version</h1>
     </div>
     <script src="/js/map.js" type="module"></script>
 </body>

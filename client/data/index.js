@@ -2,8 +2,10 @@ export * from "./kingdoms.js";
 export * from "./captures.js";
 export * from "./abilities.js";
 export * from "./moons.js";
-export * from "./subareas.js";
+export * from "./subAreas.js";
 export * from "./zones.js";
 export * from "./nomoonKingdoms.js";
 export * from "./moonKingdoms.js";
 export * from "./multimoonKingdoms.js";
+export * from "./worldPeace.js";
+export * from "./groups.js"
