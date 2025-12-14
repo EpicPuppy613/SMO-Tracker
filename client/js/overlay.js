@@ -406,15 +406,30 @@ function checkMoonReqs() {
         div.style.color = "black";
     }
 }
-function evaluateLogic(array) {
+function evaluateLogic(logic) {
     function predicate (value) {
         if (typeof value == "object") {
             return evaluateLogic(value);
         } else if (typeof value == "string") {
-            if (value.charAt(0) == "c") {
-                return !document.getElementById(`capture-tracker-${normalizeName(value.substring(1))}`).classList.contains("locked");
-            } else if (value.charAt(0) == "a") {
-                return !document.getElementById(`ability-tracker-${normalizeName(value.substring(1))}`).classList.contains("locked");
+            if (value.charAt(0) == "c") { // Capture
+                return new Set(JSON.parse(localStorage.getItem("captures")) ?? []).has(normalizeName(value.substring(1)));
+            } else if (value.charAt(0) == "a") { // Ability
+                return new Set(JSON.parse(localStorage.getItem("abilities")) ?? []).has(normalizeName(value.substring(1)));
+            } else if (value.charAt(0) == "m") { // Moon
+                return new Set(JSON.parse(localStorage.getItem("collectedMap")) ?? []).has(Number(value.substring(1)));
+            } else if (value.charAt(0) == "l") { // Loading Zone
+                return new Map(JSON.parse(localStorage.getItem("linkMap")) ?? []).has(Number(value.substring(1)));
+            } else if (value.charAt(0) == "g") { // Group
+                let group = groups.get(value.substring(1));
+                return group ? evaluateLogic(group) : false;
+            } else if (value.charAt(0) == "w") { // World Peace
+                let peace = worldPeace.get(value.substring(1));
+                return peace ? evaluateLogic(peace) : false;
+            } else if (value.charAt(0) == "r") { // Moon Rock
+                let peace = new Set(JSON.parse(localStorage.getItem("moonRock")) ?? []).has(normalizeName(value.substring(1)));
+                return peace ? evaluateLogic(peace) : false;
+            } else if (value.charAt(0) == "o") { // Outfit
+                return new Set(JSON.parse(localStorage.getItem("outfits")) ?? []).has(normalizeName(value.substring(1)));
             } else {
                 return false;
             }
@@ -423,15 +438,15 @@ function evaluateLogic(array) {
         }
     }
 
-    switch (array[0]) {
+    switch (logic.op) {
         case "TRUE":
             return 1;
         case "FALSE":
             return 0;
         case "AND":
-            return array.slice(1).every(predicate);
+            return logic.reqs.every(predicate);
         case "OR":
-            return array.slice(1).some(predicate);
+            return logic.reqs.some(predicate);
         default:
             return 0;
     }
