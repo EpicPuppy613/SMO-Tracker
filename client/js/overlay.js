@@ -48,7 +48,8 @@ function initOverlay() {
     moons.forEach((kingdom) => {
         let newDiv = document.createElement("div");
         newDiv.id = `moon-tracker-${normalizeName(kingdom)}`;
-        newDiv.innerHTML = (Number(localStorage.getItem("showText")) ? `<p>${kingdom}</p>` : `<img src="/resource/moons/${normalizeName(kingdom)}.png" alt="${kingdom} Moons" title="${kingdom}" draggable="false">`) + `<p class="moon-counter"><span id="moon-tracker-${normalizeName(kingdom)}-amount">${savedMoons.has(kingdom) ? savedMoons.get(kingdom) : 0}</span> / <span id="moon-tracker-${normalizeName(kingdom)}-total" contenteditable="false">${savedMoonTotals.has(kingdom) ? savedMoonTotals.get(kingdom) : "??"}</span></p>`;
+        newDiv.classList.add("moon-panel");
+        newDiv.innerHTML = (Number(localStorage.getItem("showText")) ? `<p>${kingdom}</p>` : `<img src="/resource/moons/progress-${normalizeName(kingdom)}.webp" alt="${kingdom} Moons" title="${kingdom}" draggable="false"><div class="moon-filter"></div>`) + `<span id="moon-tracker-${normalizeName(kingdom)}-amount" class="moon-amount">${savedMoons.has(kingdom) ? savedMoons.get(kingdom) : 0}</span><span class="moon-total">/<span id="moon-tracker-${normalizeName(kingdom)}-total" contenteditable="false">${savedMoonTotals.has(kingdom) ? savedMoonTotals.get(kingdom) : "??"}</span></span>`;
         newDiv.onwheel = scrollMoonCount;
         newDiv.onclick = setMoonTotal;
         nodes.divMoon.appendChild(newDiv);
@@ -84,6 +85,7 @@ function initOverlay() {
     });
     let newDiv = document.createElement("div");
     newDiv.id = `moon-tracker-moon`;
+    newDiv.classList.add("moon-panel");
     newDiv.innerHTML = Number(localStorage.getItem("showText")) ? '<p>Moon Requirements</p>' : '<img src="/resource/moons/Mushroom.png" alt="Moon Requirements" title="Moon Requirements">';
     nodes.divMoon.appendChild(newDiv);
     setTimeout(wrapText, 1, newDiv);
@@ -309,11 +311,11 @@ function scrollMoonCount(event) {
 function updateMoonProgress(target) {
     let amount = Number(document.getElementById(target.id + "-amount").textContent);
     let total = Number(document.getElementById(target.id + "-total").textContent);
+    let filter = target.querySelector(".moon-filter");
     if (isNaN(amount) || isNaN(total)) {
-        target.style.backgroundPositionY = "0%";
-        target.style.color = "black";
+        filter.style.height = "100%";
     };
-    target.style.backgroundPositionY = Math.min(Math.max(0, amount / total * 100), 100) + "%";
+    filter.style.height = Math.min(Math.max(15, 15 + (total - amount) / total * 67), 82) + "%";
     fullMoons(target);
 }
 // Moon Total Tracker
@@ -384,13 +386,10 @@ function fullMoons(target) {
     let total = document.getElementById(target.id + "-total");
     let amount = document.getElementById(target.id + "-amount");
 
-    
-
     if (Number(amount.textContent) >= Number(total.textContent)) {
-        target.style.color = "green";
-        target.style.backgroundPositionY = "100%";
+        target.style.color = "#55ff55";
     } else {
-        target.style.color = "black";
+        target.style.color = "white";
     }
 }
 function checkMoonReqs() {
