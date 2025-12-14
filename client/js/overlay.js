@@ -1,4 +1,4 @@
-import { kingdoms, captures, abilities, nomoonKingdoms, moonKingdoms, multimoonKingdoms, worldPeace } from "../data/index.js";
+import { kingdoms, captures, abilities, nomoonKingdoms, moonKingdoms, multimoonKingdoms, worldPeace, groups } from "../data/index.js";
 import { clearCache, initAbly } from "./auth.js";
 
 const moons = kingdoms.filter((kingdom) => !nomoonKingdoms.has(kingdom));
