@@ -1,5 +1,5 @@
 {
     "public": true,
     "outputDirectory": "client",
-    "buildCommand": "sh vercel.sh"
+    "buildCommand": "npm run build"
 }

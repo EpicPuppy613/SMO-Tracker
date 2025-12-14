@@ -1,5 +1,4 @@
 node_modules/**/*
-server/**/*.js
 client/**/*.xcf
 .vercel
 .env*.local
