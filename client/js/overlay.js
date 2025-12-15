@@ -369,8 +369,6 @@ function validateTotalMoons() {
 
     if (isNaN(num) || num >= 100 || num <= 0) {
         nodes.moonEditor.textContent = "??";
-        nodes.moonEditor.style.backgroundPositionY = "0%";
-        nodes.moonEditor.style.color = "black";
         moonTotals.clear(item);
     } else {
         nodes.moonEditor.textContent = String(num);
